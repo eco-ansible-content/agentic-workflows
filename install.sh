@@ -147,24 +147,52 @@ if [ -f "$SETTINGS_FILE" ]; then
 fi
 
 # Create or update settings with autonomous permissions
-cat > "$SETTINGS_FILE" << 'EOF'
-{
-  "permissions": {
-    "allow": [
-      "Bash(*)",
-      "WebSearch",
-      "WebFetch",
-      "Read",
-      "Write",
-      "Edit",
-      "Agent",
-      "Skill"
-    ]
-  }
-}
-EOF
+python3 << 'PYTHON_SCRIPT'
+import json
+import sys
+import os
 
-echo "✅ Configured zero-permission autonomy in: $SETTINGS_FILE"
+settings_file = os.path.expanduser("~/.claude/settings.local.json")
+
+# Read existing settings or create new
+if os.path.exists(settings_file):
+    try:
+        with open(settings_file, 'r') as f:
+            data = json.load(f)
+    except json.JSONDecodeError:
+        data = {}
+else:
+    data = {}
+
+# Ensure permissions structure exists
+if 'permissions' not in data:
+    data['permissions'] = {}
+if 'allow' not in data['permissions']:
+    data['permissions']['allow'] = []
+
+# Add autonomous permissions (avoid duplicates)
+autonomous_perms = [
+    "Bash(*)",
+    "WebSearch",
+    "WebFetch",
+    "Read",
+    "Write",
+    "Edit",
+    "Agent",
+    "Skill"
+]
+
+for perm in autonomous_perms:
+    if perm not in data['permissions']['allow']:
+        data['permissions']['allow'].append(perm)
+
+# Write back
+with open(settings_file, 'w') as f:
+    json.dump(data, f, indent=2)
+
+print("✅ Configured zero-permission autonomy (merged with existing settings)")
+PYTHON_SCRIPT
+
 echo "   All bash commands and tools pre-approved for autonomous operation"
 echo ""
 
@@ -180,9 +208,11 @@ if [ -f "$MARKETPLACE_FILE" ]; then
   python3 << PYTHON_SCRIPT
 import json
 import sys
+import os
 from datetime import datetime
 
-marketplace_file = "$MARKETPLACE_FILE"
+marketplace_file = os.path.expanduser("$MARKETPLACE_FILE")
+repo_dir = "$REPO_DIR"
 
 try:
     with open(marketplace_file, 'r') as f:
@@ -193,9 +223,9 @@ try:
         data['agentic-workflows'] = {
             'source': {
                 'source': 'directory',
-                'path': '$REPO_DIR'
+                'path': repo_dir
             },
-            'installLocation': '$REPO_DIR',
+            'installLocation': repo_dir,
             'lastUpdated': datetime.now().isoformat() + 'Z'
         }
 
@@ -207,7 +237,7 @@ try:
         print("✅ Marketplace already registered")
 except Exception as e:
     print(f"⚠️  Could not register marketplace: {e}")
-    sys.exit(0)  # Don't fail installation
+    sys.exit(1)  # Exit with error code
 PYTHON_SCRIPT
 else
   echo "⚠️  Marketplace file not found"
@@ -226,9 +256,11 @@ if [ -f "$REGISTRY_FILE" ]; then
   python3 << PYTHON_SCRIPT
 import json
 import sys
+import os
 from datetime import datetime
 
-registry_file = "$REGISTRY_FILE"
+registry_file = os.path.expanduser("$REGISTRY_FILE")
+plugin_cache = "$PLUGIN_CACHE"
 
 try:
     with open(registry_file, 'r') as f:
@@ -241,7 +273,7 @@ try:
 
         data['plugins']['agentic-workflows@agentic-workflows'] = [{
             'scope': 'user',
-            'installPath': '$PLUGIN_CACHE',
+            'installPath': plugin_cache,
             'version': '1.0.0',
             'installedAt': datetime.now().isoformat() + 'Z',
             'lastUpdated': datetime.now().isoformat() + 'Z'
@@ -255,7 +287,7 @@ try:
         print("✅ Plugin already registered")
 except Exception as e:
     print(f"⚠️  Could not register plugin: {e}")
-    sys.exit(0)  # Don't fail installation
+    sys.exit(1)  # Exit with error code
 PYTHON_SCRIPT
 else
   echo "⚠️  Registry file not found - plugin installed but not registered"
