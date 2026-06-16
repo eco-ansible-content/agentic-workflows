@@ -95,28 +95,39 @@ if [ ! -d "$CLAUDE_AGENTS_DIR" ]; then
   exit 1
 fi
 
-# Clean up old hyaish-agents plugin if it exists (upgrade path)
+# Check for old hyaish-agents plugin (optional cleanup for upgrade)
 echo "🧹 Checking for old plugin installation..."
 OLD_PLUGIN_CACHE="$HOME/.claude/plugins/cache/local/hyaish-agents"
 OLD_PLUGIN_LINK="$CLAUDE_AGENTS_DIR/hyaish-agents-plugin"
 
 if [ -d "$OLD_PLUGIN_CACHE" ] || [ -L "$OLD_PLUGIN_LINK" ]; then
-  echo "   Found old 'hyaish-agents' plugin - cleaning up for upgrade..."
+  echo ""
+  echo "⚠️  Found old 'hyaish-agents' plugin installation"
+  echo ""
+  echo "   This will cause duplicate agents in Claude Code's agent library"
+  echo "   (both 'hyaish-agents:*' and 'agentic-workflows:*' will appear)"
+  echo ""
+  echo "   Recommended: Remove old plugin to avoid confusion"
+  echo ""
+  read -p "   Remove old 'hyaish-agents' plugin? (y/n) " -n 1 -r
+  echo
+  echo
 
-  # Remove old cache directory
-  if [ -d "$OLD_PLUGIN_CACHE" ]; then
-    rm -rf "$OLD_PLUGIN_CACHE"
-    echo "   ✅ Removed old plugin cache"
-  fi
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    # Remove old cache directory
+    if [ -d "$OLD_PLUGIN_CACHE" ]; then
+      rm -rf "$OLD_PLUGIN_CACHE"
+      echo "   ✅ Removed old plugin cache"
+    fi
 
-  # Remove old symlink
-  if [ -L "$OLD_PLUGIN_LINK" ]; then
-    rm "$OLD_PLUGIN_LINK"
-    echo "   ✅ Removed old plugin symlink"
-  fi
+    # Remove old symlink
+    if [ -L "$OLD_PLUGIN_LINK" ]; then
+      rm "$OLD_PLUGIN_LINK"
+      echo "   ✅ Removed old plugin symlink"
+    fi
 
-  # Clean up registry entries
-  python3 << 'CLEANUP_SCRIPT'
+    # Clean up registry entries
+    python3 << 'CLEANUP_SCRIPT'
 import json
 import os
 
@@ -152,11 +163,17 @@ if os.path.exists(marketplace_file):
         print(f"   ⚠️  Could not clean marketplace: {e}")
 CLEANUP_SCRIPT
 
-  echo "   ✨ Upgrade cleanup complete - old plugin removed"
+    echo "   ✨ Upgrade cleanup complete"
+    echo ""
+  else
+    echo "   ⏭️  Skipped - old plugin will remain installed"
+    echo "   Note: You may see duplicate agents in Claude Code"
+    echo ""
+  fi
 else
   echo "   ✅ No old plugin found - clean install"
+  echo ""
 fi
-echo ""
 
 # Check if symlink already exists
 if [ -L "$PLUGIN_LINK" ]; then
