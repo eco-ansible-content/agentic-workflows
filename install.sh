@@ -95,6 +95,69 @@ if [ ! -d "$CLAUDE_AGENTS_DIR" ]; then
   exit 1
 fi
 
+# Clean up old hyaish-agents plugin if it exists (upgrade path)
+echo "🧹 Checking for old plugin installation..."
+OLD_PLUGIN_CACHE="$HOME/.claude/plugins/cache/local/hyaish-agents"
+OLD_PLUGIN_LINK="$CLAUDE_AGENTS_DIR/hyaish-agents-plugin"
+
+if [ -d "$OLD_PLUGIN_CACHE" ] || [ -L "$OLD_PLUGIN_LINK" ]; then
+  echo "   Found old 'hyaish-agents' plugin - cleaning up for upgrade..."
+
+  # Remove old cache directory
+  if [ -d "$OLD_PLUGIN_CACHE" ]; then
+    rm -rf "$OLD_PLUGIN_CACHE"
+    echo "   ✅ Removed old plugin cache"
+  fi
+
+  # Remove old symlink
+  if [ -L "$OLD_PLUGIN_LINK" ]; then
+    rm "$OLD_PLUGIN_LINK"
+    echo "   ✅ Removed old plugin symlink"
+  fi
+
+  # Clean up registry entries
+  python3 << 'CLEANUP_SCRIPT'
+import json
+import os
+
+registry_file = os.path.expanduser("~/.claude/plugins/installed_plugins.json")
+marketplace_file = os.path.expanduser("~/.claude/plugins/known_marketplaces.json")
+
+# Clean up installed_plugins.json
+if os.path.exists(registry_file):
+    try:
+        with open(registry_file, 'r') as f:
+            data = json.load(f)
+
+        if 'plugins' in data and 'hyaish-agents@hyaish-agents' in data['plugins']:
+            del data['plugins']['hyaish-agents@hyaish-agents']
+            with open(registry_file, 'w') as f:
+                json.dump(data, f, indent=2)
+            print("   ✅ Removed old plugin from registry")
+    except Exception as e:
+        print(f"   ⚠️  Could not clean registry: {e}")
+
+# Clean up known_marketplaces.json
+if os.path.exists(marketplace_file):
+    try:
+        with open(marketplace_file, 'r') as f:
+            data = json.load(f)
+
+        if 'hyaish-agents' in data:
+            del data['hyaish-agents']
+            with open(marketplace_file, 'w') as f:
+                json.dump(data, f, indent=2)
+            print("   ✅ Removed old marketplace entry")
+    except Exception as e:
+        print(f"   ⚠️  Could not clean marketplace: {e}")
+CLEANUP_SCRIPT
+
+  echo "   ✨ Upgrade cleanup complete - old plugin removed"
+else
+  echo "   ✅ No old plugin found - clean install"
+fi
+echo ""
+
 # Check if symlink already exists
 if [ -L "$PLUGIN_LINK" ]; then
   CURRENT_TARGET=$(readlink "$PLUGIN_LINK")
