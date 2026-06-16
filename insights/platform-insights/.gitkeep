@@ -1,0 +1,10 @@
+# Platform Insights
+
+Insights about specific platform types and their characteristics.
+
+This directory will contain learnings from:
+- REST API platforms
+- CLI-based platforms
+- Database platforms
+- SOAP API platforms
+- Configuration file platforms

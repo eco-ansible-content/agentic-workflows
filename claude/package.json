@@ -1,0 +1,64 @@
+{
+  "name": "@eco-ansible-content/agentic-workflows",
+  "version": "1.0.0",
+  "description": "Agentic Workflows - Autonomous multi-agent workflows for building Ansible collections",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "verify": "bash verify.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eco-ansible-content/agentic-workflows.git"
+  },
+  "keywords": [
+    "ansible",
+    "collections",
+    "automation",
+    "multi-agent",
+    "swarm",
+    "jira",
+    "intelligent",
+    "universal",
+    "windows",
+    "claude-code",
+    "claude-plugin"
+  ],
+  "author": "Hyaish <hyaish@example.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/eco-ansible-content/agentic-workflows/issues"
+  },
+  "homepage": "https://github.com/eco-ansible-content/agentic-workflows#readme",
+  "claudePlugin": {
+    "name": "agentic-workflows",
+    "version": "1.0.0",
+    "swarms": {
+      "ansible-collection-swarm": {
+        "description": "Universal Ansible Collection Swarm - Works for ANY platform",
+        "path": "ansible-collection-swarm",
+        "agents": {
+          "lead-architect": "ansible-collection-swarm/core/agents/lead-architect.md",
+          "jira-ingestion-specialist": "ansible-collection-swarm/core/agents/jira-ingestion-specialist.md",
+          "foundation-specialist": "ansible-collection-swarm/core/agents/foundation-specialist.md",
+          "enhancement-specialist": "ansible-collection-swarm/core/agents/enhancement-specialist.md",
+          "platform-prerequisite-specialist": "ansible-collection-swarm/core/agents/platform-prerequisite-specialist.md",
+          "module-worker": "ansible-collection-swarm/core/agents/module-worker.md",
+          "qa-coordinator": "ansible-collection-swarm/core/agents/qa-coordinator.md",
+          "refactor-specialist": "ansible-collection-swarm/core/agents/refactor-specialist.md",
+          "release-specialist": "ansible-collection-swarm/core/agents/release-specialist.md",
+          "ci-validation-specialist": "ansible-collection-swarm/core/agents/ci-validation-specialist.md",
+          "learning-evolution-specialist": "ansible-collection-swarm/core/agents/learning-evolution-specialist.md"
+        },
+        "skill": "ansible-collection-swarm/skills/ansible-collection-swarm.md"
+      },
+      "windows-collection-swarm": {
+        "description": "Windows-specific Ansible Collection Swarm (legacy)",
+        "path": "windows-collection-swarm",
+        "agents": {
+          "lead-architect": "windows-collection-swarm/agents/lead-architect.md"
+        }
+      }
+    }
+  }
+}

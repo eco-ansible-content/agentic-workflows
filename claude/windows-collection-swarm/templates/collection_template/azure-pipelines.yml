@@ -1,0 +1,62 @@
+---
+trigger:
+  - main
+  - develop
+
+pr:
+  - main
+  - develop
+
+variables:
+  - group: windows-test-credentials
+
+stages:
+  - stage: Sanity
+    displayName: 'Sanity Tests'
+    jobs:
+      - job: SanityTests
+        displayName: 'Run Sanity Tests'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.9'
+            displayName: 'Use Python 3.9'
+
+          - script: |
+              python -m pip install --upgrade pip
+              pip install ansible-core
+            displayName: 'Install Ansible'
+
+          - script: |
+              ansible-test sanity --python 3.9
+            displayName: 'Run Sanity Tests'
+            workingDirectory: '$(Build.SourcesDirectory)'
+
+  - stage: Integration
+    displayName: 'Integration Tests'
+    dependsOn: Sanity
+    jobs:
+      - job: IntegrationTests
+        displayName: 'Run Integration Tests'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.9'
+            displayName: 'Use Python 3.9'
+
+          - script: |
+              python -m pip install --upgrade pip
+              pip install ansible-core pywinrm
+            displayName: 'Install Dependencies'
+
+          - script: |
+              ansible-test integration --python 3.9 --inventory tests/inventory.winrm
+            displayName: 'Run Integration Tests'
+            workingDirectory: '$(Build.SourcesDirectory)'
+            env:
+              ANSIBLE_WINRM_TRANSPORT: ntlm
+              ANSIBLE_WINRM_SERVER_CERT_VALIDATION: ignore

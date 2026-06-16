@@ -1,0 +1,35 @@
+---
+trigger:
+  branches:
+    include: [main, develop]
+
+stages:
+  - stage: Sanity
+    jobs:
+      - job: SanityTests
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          matrix:
+            Python39:
+              python.version: '3.9'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(python.version)'
+          - script: |
+              pip install ansible-core
+              ansible-test sanity --python $(python.version)
+            displayName: 'Sanity Tests'
+
+  - stage: Integration
+    dependsOn: Sanity
+    jobs:
+      - job: IntegrationTests
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - script: |
+              pip install ansible-core
+              ansible-test integration --python 3.9
+            displayName: 'Integration Tests'

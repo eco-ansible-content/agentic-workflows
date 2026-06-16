@@ -1,0 +1,46 @@
+---
+# Adaptive test template
+- name: Test module
+  hosts: all
+  tasks:
+    # Stage 1: Initial Run
+    - name: Create resource
+      test_module:
+        name: test_resource
+        state: present
+      register: result
+    
+    - assert:
+        that: result is changed
+    
+    # Stage 2: Idempotency
+    - name: Create same resource (idempotent)
+      test_module:
+        name: test_resource
+        state: present
+      register: result
+    
+    - assert:
+        that: result is not changed
+    
+    # Stage 3: Check Mode
+    - name: Test check mode
+      test_module:
+        name: test_resource_2
+        state: present
+      check_mode: yes
+      register: result
+    
+    - assert:
+        that: result is changed
+    
+    # Stage 4: Error Handling
+    - name: Test error handling
+      test_module:
+        name: ""
+        state: present
+      register: result
+      ignore_errors: yes
+    
+    - assert:
+        that: result is failed

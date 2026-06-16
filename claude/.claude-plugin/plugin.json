@@ -1,0 +1,33 @@
+{
+  "name": "agentic-workflows",
+  "version": "1.0.0",
+  "description": "Intelligent multi-agent swarms for automation - Ansible collections, Kubernetes operators, Terraform modules",
+  "author": {
+    "name": "Eco Ansible Content"
+  },
+  "repository": "https://github.com/eco-ansible-content/agentic-workflows",
+  "homepage": "https://github.com/eco-ansible-content/agentic-workflows",
+  "license": "MIT",
+  "swarms": {
+    "ansible-collection-swarm": {
+      "name": "Ansible Collection Swarm",
+      "description": "Universal swarm for building ANY Ansible collection from Jira Epics",
+      "agents": 11,
+      "patterns": 5,
+      "slashCommand": "/ansible-collection-swarm"
+    },
+    "windows-collection-swarm": {
+      "name": "Windows Collection Swarm",
+      "description": "Legacy Windows-specific Ansible collection builder",
+      "agents": 13,
+      "slashCommand": "/windows-collection-swarm"
+    }
+  },
+  "features": {
+    "universalPlatformSupport": true,
+    "intelligenceBased": true,
+    "enhancementMode": true,
+    "continuousLearning": true,
+    "insightsSharing": true
+  }
+}

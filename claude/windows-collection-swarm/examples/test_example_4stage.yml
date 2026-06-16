@@ -1,0 +1,106 @@
+---
+# Example: 4-Stage Testing Loop for Windows Ansible Modules
+# This demonstrates all required test stages
+
+# Stage 1: Initial Run - Basic functionality
+- name: Stage 1 - Initial Run
+  block:
+    - name: Ensure test module works on first run
+      namespace.collection.example_module:
+        name: test_item
+        state: present
+      register: initial_run
+
+    - name: Verify initial run succeeded
+      assert:
+        that:
+          - initial_run is changed
+          - initial_run.example_module.name == "test_item"
+          - initial_run.example_module.state == "present"
+        fail_msg: "Initial run failed to create resource"
+
+# Stage 2: Idempotency - Second run shows no changes
+- name: Stage 2 - Idempotency
+  block:
+    - name: Run module again with same parameters
+      namespace.collection.example_module:
+        name: test_item
+        state: present
+      register: idempotent_run
+
+    - name: Verify idempotency (no changes on second run)
+      assert:
+        that:
+          - idempotent_run is not changed
+          - idempotent_run.example_module.name == "test_item"
+        fail_msg: "Module is not idempotent - changed on second run"
+
+# Stage 3: Check Mode - Dry-run reports correctly
+- name: Stage 3 - Check Mode
+  block:
+    - name: Remove test item for check mode test
+      namespace.collection.example_module:
+        name: test_item
+        state: absent
+
+    - name: Run module in check mode
+      namespace.collection.example_module:
+        name: test_item
+        state: present
+      check_mode: yes
+      register: check_mode_run
+
+    - name: Verify check mode reported change without making it
+      assert:
+        that:
+          - check_mode_run is changed
+        fail_msg: "Check mode should report change"
+
+    - name: Verify resource was not actually created
+      namespace.collection.example_module_info:
+        name: test_item
+      register: verify_not_created
+
+    - name: Confirm resource doesn't exist after check mode
+      assert:
+        that:
+          - verify_not_created.exists == false
+        fail_msg: "Check mode actually made changes (should be dry-run only)"
+
+# Stage 4: Error Handling - Graceful failure on invalid input
+- name: Stage 4 - Error Handling
+  block:
+    - name: Try to use module with invalid parameters
+      namespace.collection.example_module:
+        name: ""  # Invalid: empty name
+        state: present
+      register: error_test
+      ignore_errors: yes
+
+    - name: Verify module failed gracefully
+      assert:
+        that:
+          - error_test is failed
+          - error_test.msg is defined
+          - error_test.msg | length > 0
+        fail_msg: "Module did not fail gracefully on invalid input"
+
+    - name: Try another invalid scenario
+      namespace.collection.example_module:
+        name: "test_item"
+        state: "invalid_state"  # Invalid state
+      register: error_test_2
+      ignore_errors: yes
+
+    - name: Verify meaningful error message
+      assert:
+        that:
+          - error_test_2 is failed
+          - "'invalid' in error_test_2.msg | lower or 'choice' in error_test_2.msg | lower"
+        fail_msg: "Error message is not helpful"
+
+# Cleanup
+- name: Cleanup test resources
+  namespace.collection.example_module:
+    name: test_item
+    state: absent

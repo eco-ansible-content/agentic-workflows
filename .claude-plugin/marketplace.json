@@ -1,0 +1,19 @@
+{
+  "name": "agentic-workflows",
+  "owner": {
+    "name": "Eco Ansible Content",
+    "email": "hyaish@example.com"
+  },
+  "description": "Intelligent multi-agent swarms for automation - Ansible collections, Kubernetes operators, Terraform modules",
+  "plugins": [
+    {
+      "name": "agentic-workflows",
+      "source": "./claude",
+      "description": "Universal Ansible Collection Swarm - builds ANY Ansible collection from Jira Epics through intelligent research and pattern matching",
+      "version": "1.0.0",
+      "author": {
+        "name": "Eco Ansible Content"
+      }
+    }
+  ]
+}

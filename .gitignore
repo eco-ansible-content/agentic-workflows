@@ -1,0 +1,60 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs (but keep insights/quick-reference.log)
+*.log
+!insights/quick-reference.log
+logs/
+*.log.*
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+.temp/
+tmp/
+
+# RuVector database files
+ruvector.db
+*.rvf
+*.rvf.lock
+agentdb.rvf
+agentdb.rvf.lock
+
+# Test output
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Claude specific (but keep .claude-plugin/)
+.claude/
+!**/.claude-plugin/

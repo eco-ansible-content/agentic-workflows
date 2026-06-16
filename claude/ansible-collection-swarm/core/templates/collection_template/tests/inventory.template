@@ -1,0 +1,5 @@
+# Inventory Template
+# Adapted by QA Coordinator based on project_context.yml
+
+[test_hosts]
+# HOST ansible_connection=CONNECTION ansible_user=USER

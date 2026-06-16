@@ -1,0 +1,58 @@
+{
+  "name": "@YOUR-ORG/ansible-collection-swarm",
+  "version": "1.0.0",
+  "description": "Universal Ansible Collection Swarm - Autonomous multi-agent system that builds ANY Ansible collection intelligently from Jira Epics",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YOUR-USERNAME/ansible-collection-swarm.git"
+  },
+  "keywords": [
+    "ansible",
+    "collections",
+    "automation",
+    "multi-agent",
+    "swarm",
+    "jira",
+    "intelligent",
+    "universal",
+    "claude-code",
+    "claude-plugin"
+  ],
+  "author": "Your Name <your.email@example.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/YOUR-USERNAME/ansible-collection-swarm/issues"
+  },
+  "homepage": "https://github.com/YOUR-USERNAME/ansible-collection-swarm#readme",
+  "claudePlugin": {
+    "name": "ansible-collection-swarm",
+    "version": "1.0.0",
+    "agents": {
+      "lead-architect": "core/agents/lead-architect.md",
+      "jira-ingestion-specialist": "core/agents/jira-ingestion-specialist.md",
+      "foundation-specialist": "core/agents/foundation-specialist.md",
+      "enhancement-specialist": "core/agents/enhancement-specialist.md",
+      "platform-prerequisite-specialist": "core/agents/platform-prerequisite-specialist.md",
+      "module-worker": "core/agents/module-worker.md",
+      "qa-coordinator": "core/agents/qa-coordinator.md",
+      "refactor-specialist": "core/agents/refactor-specialist.md",
+      "release-specialist": "core/agents/release-specialist.md",
+      "ci-validation-specialist": "core/agents/ci-validation-specialist.md",
+      "learning-evolution-specialist": "core/agents/learning-evolution-specialist.md"
+    },
+    "skills": {
+      "ansible-collection-swarm": "skills/ansible-collection-swarm.md"
+    },
+    "patterns": {
+      "rest-api": "knowledge/patterns/rest-api-pattern.md",
+      "cli-based": "knowledge/patterns/cli-based-pattern.md",
+      "config-file": "knowledge/patterns/config-file-pattern.md",
+      "database": "knowledge/patterns/database-pattern.md",
+      "soap-api": "knowledge/patterns/soap-api-pattern.md"
+    }
+  }
+}

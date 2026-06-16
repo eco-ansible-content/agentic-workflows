@@ -1,0 +1,172 @@
+---
+# SCVMM (System Center Virtual Machine Manager) Prerequisites
+# Auto-generated template for SCVMM collection testing
+
+platform:
+  name: "System Center Virtual Machine Manager"
+  short_name: "SCVMM"
+  version_required: "2022"
+  vendor: "Microsoft"
+
+prerequisites:
+  os_features:
+    - name: "Hyper-V"
+      install_method: "Install-WindowsFeature"
+      install_command: "Install-WindowsFeature -Name Hyper-V -IncludeManagementTools -Restart"
+      required: true
+      install_order: 1
+      reboot_required: true
+
+    - name: "RSAT-Clustering"
+      install_method: "Install-WindowsFeature"
+      install_command: "Install-WindowsFeature -Name RSAT-Clustering -IncludeAllSubFeature"
+      required: true
+      install_order: 2
+      reboot_required: false
+
+  software:
+    - name: "SQL Server 2019"
+      version: "15.0.2000.5"
+      download_url: "https://download.microsoft.com/download/7/c/1/7c14e92e-bdcb-4f89-b7cf-93543e7112d1/SQLServer2019-x64-ENU-Dev.iso"
+      install_script: |
+        # SQL Server silent installation
+        C:\Installers\SQLServer2019.exe /Q /ACTION=Install \
+          /FEATURES=SQLENGINE,FULLTEXT \
+          /INSTANCENAME=MSSQLSERVER \
+          /SQLSYSADMINACCOUNTS="BUILTIN\Administrators" \
+          /SECURITYMODE=SQL \
+          /SAPWD="YourStrongPassword123!" \
+          /TCPENA BLED=1 \
+          /IACCEPTSQLSERVERLICENSETERMS
+      required: true
+      install_order: 3
+      estimated_time_minutes: 20
+
+    - name: "Windows ADK"
+      version: "10.1.22621.1"
+      download_url: "https://download.microsoft.com/download/..."
+      install_script: |
+        C:\Installers\ADK.exe /quiet /features OptionId.DeploymentTools
+      required: true
+      install_order: 4
+      estimated_time_minutes: 10
+
+    - name: "SCVMM 2022"
+      version: "10.22.1097.0"
+      download_url: "https://www.microsoft.com/en-us/evalcenter/download-system-center-virtual-machine-manager"
+      iso_path: "C:\Installers\SCVMM2022.iso"
+      install_script: |
+        # Mount ISO
+        $mountResult = Mount-DiskImage -ImagePath "C:\Installers\SCVMM2022.iso" -PassThru
+        $driveLetter = ($mountResult | Get-Volume).DriveLetter
+
+        # Run setup with unattended file
+        & "${driveLetter}:\setup.exe" /server /i /f "C:\Installers\VMM_Setup.ini"
+      required: true
+      install_order: 5
+      estimated_time_minutes: 60
+      dependencies:
+        - "SQL Server 2019"
+        - "Hyper-V"
+        - "Windows ADK"
+
+  services:
+    - name: "MSSQLSERVER"
+      display_name: "SQL Server (MSSQLSERVER)"
+      startup_type: "Automatic"
+      state: "Running"
+      verify_command: "Get-Service -Name MSSQLSERVER"
+      depends_on: []
+
+    - name: "SCVMMService"
+      display_name: "System Center Virtual Machine Manager"
+      startup_type: "Automatic"
+      state: "Running"
+      verify_command: "Get-Service -Name SCVMMService"
+      depends_on: ["MSSQLSERVER"]
+
+    - name: "vmms"
+      display_name: "Hyper-V Virtual Machine Management"
+      startup_type: "Automatic"
+      state: "Running"
+      verify_command: "Get-Service -Name vmms"
+      depends_on: []
+
+  databases:
+    - name: "VirtualManagerDB"
+      engine: "SQL Server"
+      instance: "localhost\\MSSQLSERVER"
+      create_script: |
+        # Database is created by SCVMM installer
+        # Verify it exists
+      verify_query: "SELECT DB_ID('VirtualManagerDB') AS DbId"
+      required: true
+
+  configurations:
+    - name: "SCVMM Library Share"
+      type: "SMB Share"
+      path: "C:\\ProgramData\\Virtual Machine Manager Library Files"
+      share_name: "MSSCVMMLibrary"
+      permissions: "Full Control for SYSTEM"
+      verify_command: "Get-SmbShare | Where-Object Name -eq 'MSSCVMMLibrary'"
+      configure_script: |
+        # Library share is created by SCVMM installer
+        # Verify it exists and is accessible
+
+    - name: "Hyper-V Virtual Switch"
+      type: "Virtual Network"
+      switch_name: "External Switch"
+      switch_type: "External"
+      verify_command: "Get-VMSwitch -Name 'External Switch'"
+      configure_script: |
+        $adapter = Get-NetAdapter | Where-Object Status -eq "Up" | Select-Object -First 1
+        New-VMSwitch -Name "External Switch" -NetAdapterName $adapter.Name -AllowManagementOS $true
+
+  test_data:
+    - name: "Sample VM Template"
+      type: "VHDX"
+      source: "internal"  # Create minimal VHDX for testing
+      destination: "C:\\VMMTemplates\\test-template.vhdx"
+      required: false
+      create_script: |
+        New-Item -Path "C:\VMMTemplates" -ItemType Directory -Force
+        New-VHD -Path "C:\VMMTemplates\test-template.vhdx" -SizeBytes 10GB -Dynamic
+
+verification:
+  health_checks:
+    - name: "SCVMM Console Accessible"
+      command: "Import-Module VirtualMachineManager; Get-SCVMMServer -ComputerName localhost"
+      expected_result_pattern: "Connected|Available"
+      critical: true
+
+    - name: "Hyper-V Hosts Configured"
+      command: "Get-SCVMHost"
+      expected_result_pattern: "localhost|$env:COMPUTERNAME"
+      critical: true
+
+    - name: "Library Shares Available"
+      command: "Get-SCLibraryShare"
+      expected_result_pattern: "MSSCVMMLibrary"
+      critical: true
+
+    - name: "SQL Server Accessible"
+      command: "Invoke-Sqlcmd -ServerInstance localhost -Query 'SELECT @@VERSION'"
+      expected_result_pattern: "SQL Server 2019"
+      critical: true
+
+    - name: "Hyper-V Service Running"
+      command: "Get-Service -Name vmms"
+      expected_result_pattern: "Running"
+      critical: true
+
+estimated_install_time_minutes: 120
+disk_space_required_gb: 100
+ram_required_gb: 16
+cpu_cores_required: 4
+
+notes:
+  - "SCVMM requires a dedicated Windows Server (cannot share with other roles)"
+  - "SQL Server must be installed first"
+  - "Server will reboot during Hyper-V installation"
+  - "Installation may take 1.5-2 hours total"
+  - "Ensure internet connectivity for downloading prerequisites"

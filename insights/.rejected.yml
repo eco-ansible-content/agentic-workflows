@@ -1,0 +1,45 @@
+# Insights Rejection Tracking
+# This file tracks which insights have been rejected and why
+# Automatically maintained by insights-sync-specialist
+
+rejections: {}
+
+# Example structure:
+# rejections:
+#   Platform|Windows-Winget-SYSTEM-Path:
+#     total_rejections: 3
+#     last_rejected: 2026-06-03
+#     rejected_by_agent:
+#       enhancement-specialist:
+#         count: 2
+#         reasons:
+#           - reason: "Not applicable to my workflow"
+#             date: 2026-06-03
+#           - reason: "Too specific"
+#             date: 2026-06-01
+#       module-worker:
+#         count: 1
+#         reasons:
+#           - reason: "Already handled differently"
+#             date: 2026-05-28
+#     created_by: "Hen Yaish"
+#     created_commit: "abc123"
+#
+#   Operational|Azure-Pipelines-Logs:
+#     total_rejections: 1
+#     last_rejected: 2026-06-02
+#     rejected_by_agent:
+#       release-specialist:
+#         count: 1
+#         reasons:
+#           - reason: "Not applicable to my workflow"
+#             date: 2026-06-02
+#     created_by: "Team Member"
+#     created_commit: "def456"
+
+# Rejection Reason Categories:
+# - "Not applicable to my workflow"
+# - "Too specific for my use case"
+# - "Already handled differently"
+# - "Noise / not useful"
+# - "Other" (with optional note)

@@ -1,0 +1,10 @@
+# Pattern Insights
+
+Insights about pattern adaptations, improvements, and best practices.
+
+This directory will contain learnings about:
+- Idempotency strategies
+- Error recovery mechanisms
+- Testing approaches
+- Validation patterns
+- Performance optimizations

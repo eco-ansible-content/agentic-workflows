@@ -1,0 +1,10 @@
+# Operational Insights
+
+Insights about failures, prerequisites, environment detection, and recovery.
+
+This directory will contain learnings about:
+- Prerequisite installation pitfalls
+- Environment detection strategies
+- Recovery from failures
+- Degraded environment handling
+- Installation timeouts and hanging processes

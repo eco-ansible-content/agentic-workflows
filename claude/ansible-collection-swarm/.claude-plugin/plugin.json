@@ -1,0 +1,22 @@
+{
+  "name": "ansible-collection-swarm",
+  "description": "Universal Ansible Collection Swarm - Autonomous multi-agent system that builds ANY Ansible collection intelligently from Jira Epics",
+  "version": "1.0.0",
+  "author": {
+    "name": "Your Name",
+    "email": "your.email@example.com"
+  },
+  "homepage": "https://github.com/YOUR-USERNAME/ansible-collection-swarm",
+  "repository": "https://github.com/YOUR-USERNAME/ansible-collection-swarm",
+  "license": "MIT",
+  "keywords": [
+    "ansible",
+    "collections",
+    "automation",
+    "multi-agent",
+    "swarm",
+    "jira",
+    "intelligent",
+    "universal"
+  ]
+}

@@ -1,0 +1,10 @@
+.git
+.gitignore
+.azure-pipelines
+tests/output
+docs/plans
+*.tar.gz
+*.pyc
+__pycache__
+.pytest_cache
+.tox

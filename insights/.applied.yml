@@ -1,0 +1,106 @@
+# Insights Application Tracking
+# Automatically maintained by insights-sync-specialist
+
+insights:
+  Platform|Windows-Winget-SYSTEM-Path:
+    applied_to:
+      - module-worker
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Platform|Windows-Package-Management-Providers:
+    applied_to:
+      - module-worker
+      - enhancement-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Platform|Windows-MSIX-Access-Denied:
+    applied_to:
+      - module-worker
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Pattern|Provider-Auto-Detection:
+    applied_to:
+      - module-worker
+      - enhancement-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Pattern|PowerShell-Error-Handling:
+    applied_to:
+      - module-worker
+      - enhancement-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Pattern|PowerShell-Import-Conventions:
+    applied_to:
+      - module-worker
+      - enhancement-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Pattern|Idempotency-Check:
+    applied_to:
+      - module-worker
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Pattern|Required-If-Limitations:
+    applied_to:
+      - module-worker
+      - enhancement-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Pattern|Changelog-Fragment-Format:
+    applied_to:
+      - enhancement-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Operational|Azure-Pipelines-Logs:
+    applied_to:
+      - release-specialist
+      - ci-validation-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Operational|Fork-PR-Workflow:
+    applied_to:
+      - release-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Operational|Code-Quality-Pre-PR:
+    applied_to:
+      - release-specialist
+      - ci-validation-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Operational|PR-Lifecycle-Management:
+    applied_to:
+      - release-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Operational|Version-Bump-Strategy:
+    applied_to:
+      - release-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Operational|CI-Pass-Rate-Tracking:
+    applied_to:
+      - ci-validation-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"
+    
+  Operational|Separate-Commits-For-CI-Fixes:
+    applied_to:
+      - ci-validation-specialist
+    applied_date: 2026-06-11
+    created_by: "Hen Yaish"

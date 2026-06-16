@@ -1,0 +1,25 @@
+Hey team! 👋
+
+I just released Hyaish Agents v1.0.0 - an autonomous multi-agent system that builds Ansible collections from Jira Epics.
+
+**What it is**: 11 specialized AI agents that handle the entire collection lifecycle - from reading the Epic to pushing tested code to GitHub.
+
+**Why I built it**: We were spending 2-3 weeks manually building each collection. This does it in 30 minutes to 3 hours, fully autonomous. You answer 2-3 questions at the start, then it handles everything - implementation, testing, CI monitoring, PR creation, even fixing CI failures automatically.
+
+**How it works**: The system researches the platform (works for ANY platform, not just Windows), adapts generic patterns, implements modules, runs tests, and delivers. It learns from each run and gets smarter over time.
+
+**Real example**: The SCVMM collection (15 modules) took ~2.5 hours fully automated vs what would have been 2-3 weeks manual work.
+
+**Get started**:
+```bash
+cd ~/.claude/agents && git clone https://github.com/eco-ansible-content/agentic-workflows.git && bash agentic-workflows/install.sh
+```
+
+Then just: `/ansible-collection-swarm YOUR-EPIC-KEY`
+
+**Link**: https://github.com/eco-ansible-content/agentic-workflows
+
+I'd love to hear your thoughts and results if you try it! What worked, what didn't, how much time it saved you, any issues you hit. Feedback will help make it better for everyone.
+
+Thanks!
+Hen

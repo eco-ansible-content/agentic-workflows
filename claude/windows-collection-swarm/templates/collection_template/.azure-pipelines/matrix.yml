@@ -1,0 +1,17 @@
+---
+# Test matrix configuration for Windows collections
+
+python_versions:
+  - '3.8'
+  - '3.9'
+  - '3.10'
+
+windows_versions:
+  - 'Windows Server 2019'
+  - 'Windows Server 2022'
+
+ansible_versions:
+  - '2.9'
+  - '2.10'
+  - 'stable-2.11'
+  - 'stable-2.12'

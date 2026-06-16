@@ -1,0 +1,96 @@
+---
+# Hyper-V Prerequisites
+# Auto-generated template for Hyper-V collection testing
+
+platform:
+  name: "Hyper-V"
+  short_name: "HyperV"
+  version_required: "Windows Server 2019+"
+  vendor: "Microsoft"
+
+prerequisites:
+  os_features:
+    - name: "Hyper-V"
+      install_method: "Install-WindowsFeature"
+      install_command: "Install-WindowsFeature -Name Hyper-V -IncludeManagementTools -Restart"
+      required: true
+      install_order: 1
+      reboot_required: true
+
+    - name: "Hyper-V-PowerShell"
+      install_method: "Install-WindowsFeature"
+      install_command: "Install-WindowsFeature -Name Hyper-V-PowerShell"
+      required: true
+      install_order: 2
+      reboot_required: false
+
+  software: []  # No additional software required
+
+  services:
+    - name: "vmms"
+      display_name: "Hyper-V Virtual Machine Management"
+      startup_type: "Automatic"
+      state: "Running"
+      verify_command: "Get-Service -Name vmms"
+
+    - name: "vmcompute"
+      display_name: "Hyper-V Host Compute Service"
+      startup_type: "Manual"
+      state: "Running"
+      verify_command: "Get-Service -Name vmcompute"
+
+  configurations:
+    - name: "Virtual Switch"
+      type: "VMSwitch"
+      switch_name: "Default Switch"
+      switch_type: "External"
+      verify_command: "Get-VMSwitch"
+      configure_script: |
+        $adapter = Get-NetAdapter | Where-Object Status -eq "Up" | Select-Object -First 1
+        if ($adapter) {
+            New-VMSwitch -Name "Default Switch" -NetAdapterName $adapter.Name -AllowManagementOS $true
+        }
+
+    - name: "Default VM Paths"
+      type: "Configuration"
+      verify_command: "Get-VMHost | Select-Object VirtualHardDiskPath, VirtualMachinePath"
+      configure_script: |
+        New-Item -Path "C:\HyperV\Virtual Hard Disks" -ItemType Directory -Force
+        New-Item -Path "C:\HyperV\Virtual Machines" -ItemType Directory -Force
+        Set-VMHost -VirtualHardDiskPath "C:\HyperV\Virtual Hard Disks" \
+                   -VirtualMachinePath "C:\HyperV\Virtual Machines"
+
+verification:
+  health_checks:
+    - name: "Hyper-V Service Running"
+      command: "Get-Service -Name vmms"
+      expected_result_pattern: "Running"
+      critical: true
+
+    - name: "PowerShell Module Available"
+      command: "Get-Module -ListAvailable -Name Hyper-V"
+      expected_result_pattern: "Hyper-V"
+      critical: true
+
+    - name: "Virtual Switch Exists"
+      command: "Get-VMSwitch"
+      expected_result_pattern: "."
+      critical: false  # Can create VMs without switch
+
+    - name: "Can Create Test VM"
+      command: |
+        $testVM = New-VM -Name "VerificationTest" -MemoryStartupBytes 512MB -Generation 2
+        Remove-VM -Name "VerificationTest" -Force
+        return "Success"
+      expected_result_pattern: "Success"
+      critical: true
+
+estimated_install_time_minutes: 15
+disk_space_required_gb: 50
+ram_required_gb: 8
+cpu_cores_required: 2
+
+notes:
+  - "Requires virtualization enabled in BIOS/UEFI"
+  - "Server will reboot during installation"
+  - "Can run alongside other roles (unlike SCVMM)"
