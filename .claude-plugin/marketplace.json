@@ -2,7 +2,7 @@
   "name": "agentic-workflows",
   "owner": {
     "name": "Eco Ansible Content",
-    "email": "hyaish@example.com"
+    "email": "hyaish@redhat.com"
   },
   "description": "Intelligent multi-agent swarms for automation - Ansible collections, Kubernetes operators, Terraform modules",
   "plugins": [

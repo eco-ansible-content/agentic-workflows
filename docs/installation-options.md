@@ -118,7 +118,7 @@ cd ~/.claude/agents && git clone https://github.com/eco-ansible-content/agentic-
 ### Today (Push to GitHub)
 
 ```bash
-cd /Users/hyaish/Documents/Git/agentic-workflows
+cd ~/.claude/agents/agentic-workflows
 git add .
 git commit -m "Initial release v1.0.0"
 git tag v1.0.0

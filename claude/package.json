@@ -24,7 +24,7 @@
     "claude-code",
     "claude-plugin"
   ],
-  "author": "Hyaish <hyaish@example.com>",
+  "author": "Hyaish <hyaish@redhat.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/eco-ansible-content/agentic-workflows/issues"

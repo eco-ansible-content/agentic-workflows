@@ -259,7 +259,7 @@ MIT License - See LICENSE file
 
 ## Author
 
-Hyaish <hyaish@example.com>
+Hyaish <hyaish@redhat.com>
 
 ## Version
 

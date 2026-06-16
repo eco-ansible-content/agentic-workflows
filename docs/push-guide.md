@@ -15,7 +15,7 @@ This guide walks you through publishing the Hyaish Agents plugin to GitHub.
 ### Verify Clean State
 
 ```bash
-cd /Users/hyaish/Documents/Git/agentic-workflows
+cd agentic-workflows
 
 # Check status
 git status
@@ -34,7 +34,7 @@ git status
 ### Step 1: Add All Files
 
 ```bash
-cd /Users/hyaish/Documents/Git/agentic-workflows
+cd agentic-workflows
 
 # Add all files
 git add .
@@ -245,7 +245,7 @@ Questions/Issues:
 ### Releasing v1.1.0
 
 ```bash
-cd /Users/hyaish/Documents/Git/agentic-workflows
+cd agentic-workflows
 
 # Make changes
 # Update claude/package.json version

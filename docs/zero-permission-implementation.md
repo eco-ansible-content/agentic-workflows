@@ -6,7 +6,7 @@ This document describes the implementation of **Option B: Settings-Based** zero-
 
 ### 1. Updated `~/.claude/settings.local.json`
 
-**Location**: `/Users/hyaish/.claude/settings.local.json`
+**Location**: `~/.claude/settings.local.json`
 
 **Previous content**:
 ```json
@@ -75,7 +75,7 @@ This includes:
 
 ### Scope
 
-**User-specific**: Only affects `/Users/hyaish/` - doesn't change settings for other users or team members
+**User-specific**: Only affects your local user - doesn't change settings for other users or team members
 
 **Session-persistent**: Applies to ALL Claude Code sessions (CLI, Desktop, Web)
 
