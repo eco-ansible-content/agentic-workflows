@@ -11,13 +11,13 @@ I just released Hyaish Agents v1.0.0 - an autonomous multi-agent system that bui
 **Real example**: The SCVMM collection (15 modules) took ~2.5 hours fully automated vs what would have been 2-3 weeks manual work.
 
 **Get started**:
-```bash
-cd ~/.claude/agents && git clone https://github.com/eco-ansible-content/agentic-workflows.git && bash agentic-workflows/install.sh
-```
+Quick Install:
+cd ~/.claude/agents && git clone git@github.com:eco-ansible-content/agentic-workflows.git && bash agentic-workflows/install.sh
+
+**Repository**: eco-ansible-content/agentic-workflows
+**Link**: https://github.com/eco-ansible-content/agentic-workflows
 
 Then just: `/ansible-collection-swarm YOUR-EPIC-KEY`
-
-**Link**: https://github.com/eco-ansible-content/agentic-workflows
 
 I'd love to hear your thoughts and results if you try it! What worked, what didn't, how much time it saved you, any issues you hit. Feedback will help make it better for everyone.
 
