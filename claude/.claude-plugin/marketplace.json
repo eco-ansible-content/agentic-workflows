@@ -1,0 +1,21 @@
+{
+  "name": "agentic-workflows",
+  "displayName": "Agentic Workflows",
+  "description": "Autonomous multi-agent workflows for building Ansible collections",
+  "version": "1.0.0",
+  "plugins": {
+    "agentic-workflows": {
+      "name": "agentic-workflows",
+      "version": "1.0.0",
+      "description": "Autonomous multi-agent workflows for building Ansible collections. Universal platform support through intelligent research.",
+      "path": ".",
+      "author": {
+        "name": "Eco Ansible Content",
+        "email": "hyaish@redhat.com"
+      },
+      "repository": "https://github.com/eco-ansible-content/agentic-workflows",
+      "homepage": "https://github.com/eco-ansible-content/agentic-workflows",
+      "license": "MIT"
+    }
+  }
+}
