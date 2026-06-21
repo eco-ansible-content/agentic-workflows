@@ -72,8 +72,8 @@ cd ~/.claude/agents && git clone https://github.com/eco-ansible-content/agentic-
 # Step 1: Add marketplace (one time)
 /plugin marketplace add eco-ansible-content/agentic-workflows
 
-# Step 2: Install plugin
-/plugin install agentic-workflows@eco-ansible-content
+# Step 2: Install plugin (marketplace name is "agentic-workflows")
+/plugin install agentic-workflows@agentic-workflows
 ```
 
 **Or Manual**:

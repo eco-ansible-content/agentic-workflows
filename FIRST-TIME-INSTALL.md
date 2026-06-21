@@ -46,8 +46,8 @@ If you want to browse the plugin in the marketplace:
 # In Claude Code, run:
 /plugin marketplace add eco-ansible-content/agentic-workflows
 
-# Then install:
-/plugin install agentic-workflows@eco-ansible-content
+# Then install (note: marketplace name is "agentic-workflows")
+/plugin install agentic-workflows@agentic-workflows
 ```
 
 **Note:** The marketplace method may not work on all Claude Code versions. Use the one-line install if you encounter issues.
