@@ -3,8 +3,13 @@
   "displayName": "Agentic Workflows",
   "description": "Autonomous multi-agent workflows for building Ansible collections",
   "version": "1.0.0",
-  "plugins": {
-    "agentic-workflows": {
+  "owner": {
+    "name": "Eco Ansible Content",
+    "email": "hyaish@redhat.com",
+    "url": "https://github.com/eco-ansible-content"
+  },
+  "plugins": [
+    {
       "name": "agentic-workflows",
       "version": "1.0.0",
       "description": "Autonomous multi-agent workflows for building Ansible collections. Universal platform support through intelligent research.",
@@ -17,5 +22,5 @@
       "homepage": "https://github.com/eco-ansible-content/agentic-workflows",
       "license": "MIT"
     }
-  }
+  ]
 }
