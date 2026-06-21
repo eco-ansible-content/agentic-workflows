@@ -85,6 +85,31 @@ cd agentic-workflows && bash install.sh
 
 See [docs/marketplace.md](docs/marketplace.md) for details on plugin marketplace setup.
 
+### Updating
+
+**Via Marketplace:**
+```bash
+/plugin update agentic-workflows@agentic-workflows
+```
+
+**Via install.sh:**
+```bash
+cd ~/.claude/agents/agentic-workflows
+git pull origin main
+bash install.sh
+```
+
+Then restart Claude Code.
+
+### Uninstalling
+
+```bash
+cd ~/.claude/agents/agentic-workflows
+bash uninstall.sh
+```
+
+Then restart Claude Code.
+
 ### Usage
 
 **Slash Command** (Recommended):
