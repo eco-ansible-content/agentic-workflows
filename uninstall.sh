@@ -16,13 +16,20 @@ else
   echo "⏭️  Plugin cache not found (already removed)"
 fi
 
-# Remove symlink
+# Remove symlinks
 PLUGIN_LINK="$HOME/.claude/agents/agentic-workflows-plugin"
 if [ -L "$PLUGIN_LINK" ]; then
   rm "$PLUGIN_LINK"
   echo "✅ Removed symlink: $PLUGIN_LINK"
 else
   echo "⏭️  Symlink not found (already removed)"
+fi
+
+# Remove old ansible-collection-swarm symlink (if exists from old installation)
+OLD_SWARM_LINK="$HOME/.claude/agents/ansible-collection-swarm"
+if [ -L "$OLD_SWARM_LINK" ] || [ -e "$OLD_SWARM_LINK" ]; then
+  rm -f "$OLD_SWARM_LINK"
+  echo "✅ Removed old ansible-collection-swarm symlink"
 fi
 
 # Remove from installed_plugins.json
