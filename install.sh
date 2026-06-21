@@ -292,7 +292,7 @@ import os
 from datetime import datetime
 
 marketplace_file = os.path.expanduser("$MARKETPLACE_FILE")
-repo_dir = "$REPO_DIR"
+repo_dir = "$REPO_DIR/claude"
 
 try:
     with open(marketplace_file, 'r') as f:
