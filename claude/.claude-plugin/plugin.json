@@ -8,36 +8,6 @@
   "repository": "https://github.com/eco-ansible-content/agentic-workflows",
   "homepage": "https://github.com/eco-ansible-content/agentic-workflows",
   "license": "MIT",
-  "agents": {
-    "ansible-collection-swarm-lead-architect": "agents/ansible-collection-swarm-lead-architect.md",
-    "ansible-collection-swarm-jira-ingestion-specialist": "agents/ansible-collection-swarm-jira-ingestion-specialist.md",
-    "ansible-collection-swarm-foundation-specialist": "agents/ansible-collection-swarm-foundation-specialist.md",
-    "ansible-collection-swarm-enhancement-specialist": "agents/ansible-collection-swarm-enhancement-specialist.md",
-    "ansible-collection-swarm-platform-prerequisite-specialist": "agents/ansible-collection-swarm-platform-prerequisite-specialist.md",
-    "ansible-collection-swarm-module-worker": "agents/ansible-collection-swarm-module-worker.md",
-    "ansible-collection-swarm-qa-coordinator": "agents/ansible-collection-swarm-qa-coordinator.md",
-    "ansible-collection-swarm-refactor-specialist": "agents/ansible-collection-swarm-refactor-specialist.md",
-    "ansible-collection-swarm-release-specialist": "agents/ansible-collection-swarm-release-specialist.md",
-    "ansible-collection-swarm-ci-validation-specialist": "agents/ansible-collection-swarm-ci-validation-specialist.md",
-    "ansible-collection-swarm-learning-evolution-specialist": "agents/ansible-collection-swarm-learning-evolution-specialist.md",
-    "ansible-collection-swarm-insights-sync-specialist": "agents/ansible-collection-swarm-insights-sync-specialist.md",
-    "windows-collection-swarm-lead-architect": "agents/windows-collection-swarm-lead-architect.md",
-    "windows-collection-swarm-jira-ingestion-specialist": "agents/windows-collection-swarm-jira-ingestion-specialist.md",
-    "windows-collection-swarm-foundation-specialist": "agents/windows-collection-swarm-foundation-specialist.md",
-    "windows-collection-swarm-module-worker": "agents/windows-collection-swarm-module-worker.md",
-    "windows-collection-swarm-qa-coordinator": "agents/windows-collection-swarm-qa-coordinator.md",
-    "windows-collection-swarm-refactor-specialist": "agents/windows-collection-swarm-refactor-specialist.md",
-    "windows-collection-swarm-release-specialist": "agents/windows-collection-swarm-release-specialist.md",
-    "windows-collection-swarm-ci-validation-specialist": "agents/windows-collection-swarm-ci-validation-specialist.md",
-    "windows-collection-swarm-learning-evolution-specialist": "agents/windows-collection-swarm-learning-evolution-specialist.md",
-    "windows-collection-swarm-platform-prerequisite-specialist": "agents/windows-collection-swarm-platform-prerequisite-specialist.md",
-    "windows-collection-swarm-invoke-swarm": "agents/windows-collection-swarm-invoke-swarm.md"
-  },
-  "skills": {
-    "ansible-collection-swarm": "skills/ansible-collection-swarm/SKILL.md",
-    "windows-collection-swarm": "skills/windows-collection-swarm/SKILL.md",
-    "insights-sync": "skills/insights-sync.md"
-  },
   "swarms": {
     "ansible-collection-swarm": {
       "name": "Ansible Collection Swarm",
