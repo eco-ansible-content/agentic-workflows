@@ -54,6 +54,33 @@ If you want to browse the plugin in the marketplace:
 
 ---
 
+## 🔄 Updating the Plugin
+
+### If Installed via Marketplace:
+
+In Claude Code, go to **Plugins → Installed** and click **"Update now"** on the agentic-workflows plugin.
+
+OR run:
+```bash
+/plugin update agentic-workflows@agentic-workflows
+```
+
+Then restart Claude Code.
+
+### If Installed via install.sh:
+
+```bash
+cd ~/.claude/agents/agentic-workflows
+git pull origin main
+bash install.sh
+```
+
+Then restart Claude Code.
+
+**Note:** Updates are only detected when the version number changes in the repository. Check the GitHub releases page for new versions.
+
+---
+
 ## 🗑️ Uninstall
 
 ```bash
