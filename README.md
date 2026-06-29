@@ -67,50 +67,53 @@ Template-based approach for Windows Server environments (SCVMM, Hyper-V, Exchang
 
 ### Installation
 
-**One-Line Install** (recommended):
-```bash
-cd ~/.claude/agents && git clone https://github.com/eco-ansible-content/agentic-workflows.git && bash agentic-workflows/install.sh
-```
-
-**Or via Plugin Marketplace** (after setup):
+**Plugin Marketplace** (Recommended):
 ```bash
 # Step 1: Add marketplace (one time)
 /plugin marketplace add eco-ansible-content/agentic-workflows
 
-# Step 2: Install plugin (marketplace name is "agentic-workflows")
+# Step 2: Install plugin
 /plugin install agentic-workflows@agentic-workflows
 ```
 
-**Or Manual**:
+Then restart Claude Code. That's it! ✅
+
+**Alternative - Manual Script** (if marketplace doesn't work):
 ```bash
-cd ~/.claude/agents
-git clone https://github.com/eco-ansible-content/agentic-workflows.git
-cd agentic-workflows && bash install.sh
+cd ~/.claude/agents && \
+git clone https://github.com/eco-ansible-content/agentic-workflows.git && \
+cd agentic-workflows && \
+bash install.sh
 ```
+
+**Note**: Marketplace installation is simpler and more reliable. Use the manual script only for troubleshooting.
 
 See [docs/marketplace.md](docs/marketplace.md) for details on plugin marketplace setup.
 
 ### Updating
 
-**Via Marketplace:**
+**Via Marketplace** (Recommended):
 ```bash
 /plugin update agentic-workflows@agentic-workflows
 ```
 
-**Via install.sh:**
-```bash
-cd ~/.claude/agents/agentic-workflows
-git pull origin main
-bash install.sh
-```
-
 Then restart Claude Code.
+
+**Alternative - Manual Script:**
+```bash
+cd ~/.claude/agents/agentic-workflows && git pull origin main && bash install.sh
+```
 
 ### Uninstalling
 
+**Via Marketplace:**
 ```bash
-cd ~/.claude/agents/agentic-workflows
-bash uninstall.sh
+/plugin uninstall agentic-workflows@agentic-workflows
+```
+
+**Or via uninstall script:**
+```bash
+cd ~/.claude/agents/agentic-workflows && bash uninstall.sh
 ```
 
 Then restart Claude Code.
