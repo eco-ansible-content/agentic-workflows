@@ -7,12 +7,21 @@ echo "🗑️  Uninstalling Agentic Workflows Plugin"
 echo "========================================"
 echo ""
 
-# Remove plugin cache
-PLUGIN_CACHE="$HOME/.claude/plugins/cache/local/agentic-workflows"
-if [ -d "$PLUGIN_CACHE" ]; then
-  rm -rf "$PLUGIN_CACHE"
-  echo "✅ Removed plugin cache: $PLUGIN_CACHE"
-else
+# Remove plugin cache (both manual and marketplace locations)
+PLUGIN_CACHE_LOCAL="$HOME/.claude/plugins/cache/local/agentic-workflows"
+PLUGIN_CACHE_MARKETPLACE="$HOME/.claude/plugins/cache/agentic-workflows"
+
+if [ -d "$PLUGIN_CACHE_LOCAL" ]; then
+  rm -rf "$PLUGIN_CACHE_LOCAL"
+  echo "✅ Removed local plugin cache: $PLUGIN_CACHE_LOCAL"
+fi
+
+if [ -d "$PLUGIN_CACHE_MARKETPLACE" ]; then
+  rm -rf "$PLUGIN_CACHE_MARKETPLACE"
+  echo "✅ Removed marketplace plugin cache: $PLUGIN_CACHE_MARKETPLACE"
+fi
+
+if [ ! -d "$PLUGIN_CACHE_LOCAL" ] && [ ! -d "$PLUGIN_CACHE_MARKETPLACE" ]; then
   echo "⏭️  Plugin cache not found (already removed)"
 fi
 
