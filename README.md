@@ -21,9 +21,14 @@ A collection of intelligent agent swarms that autonomously build, enhance, and m
 
 ### Ansible Collection Swarm (Universal)
 
-**Build ANY Ansible collection from Jira Epics**
+**Build ANY Ansible collection from Jira Tasks, Epics, or ANSTRATs**
 
 Works for platforms you've never heard of! Windows, Linux, Cloud APIs, Network devices, Custom applications - learns through intelligent research.
+
+**Flexible scope**:
+- **Single Task** → Build one module
+- **Epic** → Build all modules in the Epic
+- **ANSTRAT** → Build all modules across all Epics
 
 - **11 Specialized Agents** - Orchestrated by Lead Architect
 - **5 Generic Patterns** - Adapt to any platform
@@ -114,8 +119,10 @@ Then restart Claude Code.
 
 **Slash Command** (Recommended):
 ```bash
-# Universal swarm - works for ANY platform
-/ansible-collection-swarm EPIC-XXX
+# Universal swarm - works for ANY platform, any scope
+/ansible-collection-swarm TASK-XXX      # Single module
+/ansible-collection-swarm EPIC-XXX      # All modules in Epic
+/ansible-collection-swarm ANSTRAT-XXX   # All modules across all Epics
 
 # Windows swarm - legacy
 /windows-collection-swarm EPIC-XXX
@@ -125,7 +132,7 @@ Then restart Claude Code.
 ```javascript
 Agent({
   description: "Build Ansible collection",
-  prompt: "Build collection from Jira Epic EPIC-2345",
+  prompt: "Build collection from Jira ticket TASK-1234",  // or EPIC-XXX or ANSTRAT-XXX
   subagent_type: "agentic-workflows/ansible-collection-swarm:lead-architect"
 })
 ```
@@ -156,7 +163,19 @@ Agent({
 ✅ CI/CD passing
 ```
 
-### Example 2: Enhance Existing Collection
+### Example 2: Build Single Module
+
+```bash
+/ansible-collection-swarm WINOPS-1234
+
+# Single task ticket for one module
+# Result (30 minutes later):
+✅ Module: scvmm_vm_snapshot
+✅ Tests passing
+✅ Pushed to GitHub
+```
+
+### Example 3: Enhance Existing Collection
 
 ```bash
 cd ~/projects/ansible-collections/microsoft-scvmm/
@@ -169,10 +188,10 @@ cd ~/projects/ansible-collections/microsoft-scvmm/
 ✅ Ready for PR
 ```
 
-### Example 3: Unknown Platform (SolarWinds)
+### Example 4: Unknown Platform (SolarWinds)
 
 ```bash
-/ansible-collection-swarm "Build SolarWinds Orion collection"
+/ansible-collection-swarm EPIC-7890  # "Build SolarWinds Orion collection"
 
 # Swarm researches: "What is SolarWinds Orion?"
 # Discovers: REST API (SWIS)

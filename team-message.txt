@@ -1,25 +1,74 @@
-Hey team! 👋
+Hi team,
 
-I just released Hyaish Agents v1.0.0 - an autonomous multi-agent system that builds Ansible collections from Jira Epics.
+A quick update: the workflows now live under a new formal name in a new location!
 
-**What it is**: 11 specialized AI agents that handle the entire collection lifecycle - from reading the Epic to pushing tested code to GitHub.
+🎯 **New Name**: Agentic Workflows (formerly hyaish-agents)
 
-**Why I built it**: We were spending 2-3 weeks manually building each collection. This does it in 30 minutes to 3 hours, fully autonomous. You answer 2-3 questions at the start, then it handles everything - implementation, testing, CI monitoring, PR creation, even fixing CI failures automatically.
+📦 **New Repositories**:
+• Plugin: https://github.com/eco-ansible-content/agentic-workflows
+• Collections Output: https://github.com/eco-ansible-content/agentic-workflow-collections
 
-**How it works**: The system researches the platform (works for ANY platform, not just Windows), adapts generic patterns, implements modules, runs tests, and delivers. It learns from each run and gets smarter over time.
+🔄 **How to Update**:
 
-**Real example**: The SCVMM collection (15 modules) took ~2.5 hours fully automated vs what would have been 2-3 weeks manual work.
+If you already have the plugin installed, run:
+```bash
+cd ~/.claude/agents/agentic-workflows
+git pull origin main
+bash install.sh
+```
 
-**Get started**:
-Quick Install:
-cd ~/.claude/agents && git clone git@github.com:eco-ansible-content/agentic-workflows.git && bash agentic-workflows/install.sh
+Then restart Claude Code.
 
-**Repository**: eco-ansible-content/agentic-workflows
-**Link**: https://github.com/eco-ansible-content/agentic-workflows
+For first-time installation:
+```bash
+cd ~/.claude/agents && git clone https://github.com/eco-ansible-content/agentic-workflows.git && bash agentic-workflows/install.sh
+```
 
-Then just: `/ansible-collection-swarm YOUR-EPIC-KEY`
+📝 **What Changed**:
+• All 24 agents now appear as "agentic-workflows:*"
+• Collections built by the workflow push to the new eco-ansible-content org
+• Same functionality, just better organized under our official org
 
-I'd love to hear your thoughts and results if you try it! What worked, what didn't, how much time it saved you, any issues you hit. Feedback will help make it better for everyone.
+**Usage remains the same**:
+```bash
+/ansible-collection-swarm EPIC-XXX
+```
 
-Thanks!
-Hen
+Full docs: https://github.com/eco-ansible-content/agentic-workflows
+
+Let me know if you have any questions!
+
+---
+
+📊 **Red Hat Agentic SDLC Alignment Analysis - June 2026**
+
+Following Eran's feedback about aligning with Red Hat's agentic SDLC pilot standards, I've completed a comprehensive gap analysis against the wg-agentic-sdlc repository.
+
+**New Documents Created**:
+
+1. **EXECUTIVE-SUMMARY.md** - TL;DR for decision-makers
+   • Current state: Great internal tool, not yet pilot-ready
+   • Gap: Missing scaffolding, evaluation, security docs
+   • Path forward: 3 weeks to pilot-ready (Option A recommended)
+   • Strategic question: Internal advantage vs ecosystem leadership?
+
+2. **RED-HAT-ALIGNMENT-ANALYSIS.md** - Full 15-page analysis
+   • Comparison against Charter, Vision, Best Practices
+   • Hypothetical scorecard rating (currently ●/●/●●/●●/●/○/●)
+   • Gap analysis across all dimensions
+   • Detailed recommendations with cost/benefit
+
+3. **IMPLEMENTATION-CHECKLIST.md** - Day-by-day execution plan
+   • Week 1: Test infrastructure + AGENTS.md + CI gates
+   • Week 2: THREAT_MODEL.md + evaluation + telemetry
+   • Week 3: Documentation polish + pilot submission
+   • Ready to copy to GitHub Project Board
+
+**Bottom Line**:
+Your agents are world-class. The gap is in foundational scaffolding (tests, CI, security docs, evaluation framework) that Red Hat requires for shared pilot work.
+
+**3 weeks of focused effort** transforms this from "great internal tool" to "pilot-ready contribution" that other teams can learn from.
+
+**Next Step**: Decision on which path (A: minimal viable, B: strong contribution, C: stay internal)
+
+All documents in the repo root. Feedback welcome!
