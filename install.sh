@@ -344,6 +344,7 @@ from datetime import datetime
 
 registry_file = os.path.expanduser("$REGISTRY_FILE")
 plugin_cache = "$PLUGIN_CACHE"
+version = "$VERSION"
 
 try:
     with open(registry_file, 'r') as f:
@@ -357,7 +358,7 @@ try:
         data['plugins']['agentic-workflows@agentic-workflows'] = [{
             'scope': 'user',
             'installPath': plugin_cache,
-            'version': '1.0.0',
+            'version': version,
             'installedAt': datetime.now().isoformat() + 'Z',
             'lastUpdated': datetime.now().isoformat() + 'Z'
         }]
