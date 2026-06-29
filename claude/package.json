@@ -1,6 +1,6 @@
 {
   "name": "@eco-ansible-content/agentic-workflows",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Agentic Workflows - Autonomous multi-agent workflows for building Ansible collections",
   "main": "index.js",
   "scripts": {
@@ -32,7 +32,7 @@
   "homepage": "https://github.com/eco-ansible-content/agentic-workflows#readme",
   "claudePlugin": {
     "name": "agentic-workflows",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "swarms": {
       "ansible-collection-swarm": {
         "description": "Universal Ansible Collection Swarm - Works for ANY platform",

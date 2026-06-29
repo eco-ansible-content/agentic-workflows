@@ -1,6 +1,6 @@
 {
   "name": "agentic-workflows",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Intelligent multi-agent swarms for automation - Ansible collections, Kubernetes operators, Terraform modules",
   "author": {
     "name": "Eco Ansible Content"
