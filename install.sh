@@ -201,8 +201,11 @@ elif [ -e "$PLUGIN_LINK" ]; then
   exit 1
 fi
 
+# Read version from package.json
+VERSION=$(grep '"version"' "$REPO_DIR/claude/package.json" | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+
 # Create plugin cache directory (Claude Code plugin standard location)
-PLUGIN_CACHE="$HOME/.claude/plugins/cache/local/agentic-workflows/1.0.0"
+PLUGIN_CACHE="$HOME/.claude/plugins/cache/local/agentic-workflows/$VERSION"
 mkdir -p "$PLUGIN_CACHE"
 
 # Copy plugin files to cache (including hidden files)
