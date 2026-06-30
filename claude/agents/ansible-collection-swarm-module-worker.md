@@ -25,6 +25,164 @@ Receive from Lead Architect:
 
 ## Process
 
+### Step 0: Pre-Implementation Research (MANDATORY)
+
+**CRITICAL**: Complete this research BEFORE writing ANY code. This prevents:
+- AI hallucinations (inventing non-existent features)
+- Reinventing the wheel (ignoring collection utilities)
+- Text parsing when APIs exist
+- Using protected system paths
+- Missing available CLI flags
+
+#### 0.1: Search Collection Utilities FIRST
+
+```bash
+# Check if collection already has utilities for this operation
+ls module_utils/
+grep -r "Process\|HTTP\|[operation-type]" plugins/modules/
+
+# Example: Before implementing process execution
+grep -r "Start.*Process\|run_command" plugins/modules/
+```
+
+**If utility exists → USE IT. Do NOT reimplement.**
+
+Common collection utilities:
+- Process execution
+- HTTP requests
+- JSON/YAML parsing
+- File operations
+- Platform-specific APIs
+
+#### 0.2: Research Language-Appropriate Libraries
+
+Determine implementation language from `prerequisites.md`, then research:
+
+**For PowerShell modules**:
+```
+WebSearch("[tool] PowerShell module")
+WebSearch("[tool] COM API")
+WebSearch("[tool] .NET API")
+
+# Example: For WinGet
+WebSearch("WinGet PowerShell module")
+# Result: Microsoft.WinGet.Client exists → USE IT
+```
+
+**For Python modules**:
+```
+WebSearch("[tool] Python SDK")
+WebSearch("[tool] Python library")
+WebSearch("[tool] REST API")
+
+# Example: For AWS S3
+WebSearch("AWS S3 Python SDK")
+# Result: boto3 exists → USE IT
+```
+
+**For Bash modules**:
+```
+WebSearch("[tool] JSON output")
+WebSearch("[tool] systemd API")
+WebSearch("[tool] D-Bus interface")
+```
+
+**API Preference Order** (universal):
+1. Collection module_utils (checked above)
+2. Official SDK/library for [tool] in [language]
+3. Well-maintained third-party libraries
+4. Platform native APIs (COM/WMI/D-Bus/etc.)
+5. CLI with structured output (--json, --xml)
+6. CLI text parsing ← **LAST RESORT ONLY**
+
+#### 0.3: Check CLI Flags (if using CLI)
+
+```bash
+# Before parsing CLI output, check for structured output
+[tool] --help
+man [tool]
+
+WebSearch("[tool] JSON output")
+WebSearch("[tool] structured output")
+WebSearch("[tool] machine readable")
+```
+
+Common flags to look for:
+- `--json`, `--yaml`, `--xml`, `--format json`
+- `--no-progress`, `--no-color`, `--quiet`
+- `--machine-readable`, `--porcelain`
+
+**If --json exists → USE IT. Don't parse text.**
+
+#### 0.4: Verify Features Exist
+
+**Before using ANY feature, verify in official docs**:
+
+```
+WebSearch("[feature] [tool] official documentation")
+
+# Examples:
+# ❌ DON'T: Assume WINGET_RUNNING_AS_SYSTEM env var exists
+# ✅ DO: WebSearch("WinGet environment variables official documentation")
+# Result: No such env var → Don't use it
+
+# ❌ DON'T: Guess that --quiet flag exists  
+# ✅ DO: Check [tool] --help first
+```
+
+**Rule**: If feature not in official docs → It doesn't exist.
+
+#### 0.5: Research Platform Support
+
+```
+WebSearch("[tool] [platform] [version] support")
+WebSearch("[tool] system requirements")
+
+# Examples:
+# - "WinGet Windows Server 2025"  
+# - "podman RHEL 9 support"
+# - "homebrew macOS Sonoma"
+```
+
+**Be specific** in documentation:
+- "Windows Server 2025 (included by default)"
+- "Windows Server 2022 (manual install, unsupported)"
+- NOT: "Works on Windows Server"
+
+#### 0.6: Document Research Findings
+
+Create `docs/plans/research_findings_[module-name].md`:
+
+```markdown
+# Research Findings: [module-name]
+
+## Collection Utilities Available
+- [List utilities found or "None - need to implement"]
+
+## Language: [PowerShell/Python/Bash]
+
+## API/Library Research
+- **Preferred**: [SDK/library name] ([link to docs])
+- **Reason**: [Why this is best option]
+- **Alternative**: [CLI with --json] (if no library exists)
+
+## Platform Support
+- **Minimum version**: [OS version]
+- **Installation**: [Pre-installed / Manual / Unsupported]
+
+## Features Verified
+- [Feature 1]: ✅ Exists ([doc link])
+- [Feature 2]: ❌ Does not exist (don't use)
+
+## CLI Flags Available (if applicable)
+- `--json`: ✅ (use for structured output)
+- `--no-progress`: ✅ (use to avoid ANSI codes)
+```
+
+**Deliverable**: Complete research_findings file BEFORE proceeding to Step 1.
+
+---
+
 ### Step 1: Understand the Module
 
 Read module specification:
@@ -91,6 +249,114 @@ Get-Command -Module VirtualMachineManager | Where-Object {$_.Name -like "*Host*"
 # PATCH /Orion/Nodes/{id} - update node
 # DELETE /Orion/Nodes/{id} - delete node
 ```
+
+### Step 4.5: Apply Safety Rules and Parameter Design
+
+**BEFORE implementing, apply these universal safety rules**:
+
+#### Safety Rule 1: No Connection-Breaking Operations
+
+**BLOCKED operations** (never expose as parameters):
+- ❌ `allow_reboot` - kills WinRM/SSH connection
+- ❌ Network changes during execution
+- ❌ Disabling remote management mid-run
+- ❌ Killing parent/connection processes
+
+**Think**: "What if this runs over SSH/WinRM?"
+
+**Pattern**: Provide `*_required` OUTPUT, not `allow_*` INPUT
+```yaml
+# ❌ WRONG
+parameters:
+  allow_reboot:
+    type: bool
+
+# ✅ RIGHT  
+returns:
+  reboot_required:
+    description: Whether a reboot is needed after this operation
+    type: bool
+    
+notes:
+  - Use ansible.windows.win_reboot (or equivalent) after this module if reboot_required=true
+```
+
+#### Safety Rule 2: No Protected System Directories
+
+**Platform-specific protected paths**:
+
+**Windows**:
+- ❌ `WindowsApps`, `WinSxS`, `System32\config`
+- ✅ Use: `$env:LOCALAPPDATA`, `$env:ProgramFiles`, `$env:PATH`
+
+**Linux**:
+- ❌ `/proc/kcore`, `/sys/firmware`, package internals
+- ✅ Use: `/usr/bin`, `/opt`, `/var/lib/[package]`, package manager APIs
+
+**macOS**:
+- ❌ `~/Library/.../com.apple.*`, `/System/.../PrivateFrameworks`
+- ✅ Use: `/Applications`, public paths, APIs
+
+**Any Platform**:
+- ❌ Internal/undocumented directories
+- ✅ Documented public paths, environment variables, APIs
+
+**Research**: `WebSearch("[tool] installation path [OS]")`
+
+#### Parameter Design Rule: Default to Lists
+
+**For bulk operations**, parameters should accept lists:
+
+```yaml
+# ❌ WRONG - single item only
+packages:
+  type: str
+  description: Package to install
+
+# ✅ RIGHT - supports bulk
+packages:
+  type: list
+  elements: str
+  description: Package(s) to install
+```
+
+**Applies to**:
+- Package names
+- File paths
+- Service names
+- User/group names
+- Any noun that could be plural
+
+**Implementation**:
+```python
+# Handle both single and list
+for package in module.params['packages']:
+    install(package)
+```
+
+#### Path Rules by Platform
+
+**Windows (PowerShell)**:
+```powershell
+# ✅ Use environment variables
+$installPath = $env:LOCALAPPDATA
+$programFiles = $env:ProgramFiles
+
+# ❌ Don't hardcode or use protected paths
+# $bad = "C:\Program Files\WindowsApps"  # WRONG
+```
+
+**Linux (Python/Bash)**:
+```python
+# ✅ Use standard paths or package manager
+install_path = "/usr/bin"
+config_path = "/etc/[package]"
+
+# ❌ Don't access internals
+# bad = "/proc/kcore"  # WRONG
+```
+
+---
 
 ### Step 5: Implement Following Pattern
 

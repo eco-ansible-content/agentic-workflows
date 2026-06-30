@@ -336,4 +336,4 @@ If you find this useful, please star the repository!
 - [Quick Start](claude/ansible-collection-swarm/QUICKSTART.md)
 - [Documentation](claude/)
 
-**Current Version**: 0.0.1 (Beta - Not Production Ready)
+**Current Version**: 0.0.2 (Beta - Not Production Ready)

@@ -144,9 +144,80 @@ sed -i 's/- \[ \] scvmm_host/- [x] scvmm_host/' docs/plans/module_backlog.md
 ansible-test integration scvmm_host --python 3.9
 ```
 
+## Pre-Test Quality Checklist (MANDATORY)
+
+**BEFORE running integration tests**, verify module follows universal quality standards:
+
+### Universal Code Quality Checks
+
+- [ ] **No AI Hallucinations**: All features/APIs verified in official documentation
+  - Check: No environment variables without doc link in comments
+  - Check: No assumed flags/features
+  - Action: Grep for `$env:`, `os.environ`, `export` and verify each
+
+- [ ] **Uses Collection Utilities**: Not reinventing the wheel
+  - Check: Uses `module_utils` functions, not raw language primitives
+  - ❌ Bad: `System.Diagnostics.Process`, `subprocess.Popen` directly
+  - ✅ Good: `Start-AnsibleWindowsProcess`, `module.run_command()`
+  - Action: Grep for low-level primitives, verify justified
+
+- [ ] **Uses Language-Appropriate APIs**: Not parsing text
+  - Check: Uses SDK/library/module, not CLI text parsing
+  - ❌ Bad: Parsing `winget list` output, `aws s3 ls` text
+  - ✅ Good: `Microsoft.WinGet.Client`, `boto3` library
+  - Action: Look for text parsing patterns (split/regex on command output)
+
+- [ ] **No Connection-Breaking Operations**: Safe for remote execution
+  - Check: No `allow_reboot`, network changes, kill processes
+  - ❌ Bad: Parameters that reboot, change network, disable remote access
+  - ✅ Good: Output `reboot_required`, use separate reboot module
+  - Action: Check parameter spec for dangerous operations
+
+- [ ] **No Protected Directory Access**: Uses documented paths
+  - Check: No WindowsApps, WinSxS, /proc/kcore, macOS internals
+  - ❌ Bad: Hardcoded protected paths
+  - ✅ Good: Environment variables, documented public paths
+  - Action: Grep for hardcoded paths, verify they're public
+
+- [ ] **Bulk Operation Support**: Parameters accept lists
+  - Check: Main parameters use `type: list, elements: str`
+  - ❌ Bad: `packages: type: str` (single only)
+  - ✅ Good: `packages: type: list, elements: str`
+  - Action: Check if users would want bulk operations
+
+- [ ] **Platform Support Verified**: OS/version documented accurately
+  - Check: Requirements section specifies exact versions
+  - ❌ Bad: "Works on Windows Server" (vague)
+  - ✅ Good: "Server 2025 (included), Server 2022 (manual, unsupported)"
+  - Action: Verify claims against official docs
+
+- [ ] **CLI Flags Optimized**: Uses structured output
+  - Check: If using CLI, uses --json/--xml flags
+  - ❌ Bad: Parsing text without checking for --json
+  - ✅ Good: `[tool] --json` or `--no-progress` to avoid ANSI codes
+  - Action: Check if tool supports structured output
+
+- [ ] **Code Simplicity**: Not over-engineered
+  - Check: Solutions are as simple as possible
+  - Rule: If >10 lines, could it be simpler?
+  - Action: Look for unnecessary complexity
+
+### Failed Pre-Test Checklist?
+
+**If ANY check fails**:
+1. **STOP** - Do NOT run integration tests yet
+2. **Flag** the issue in module code
+3. **Request fix** from module-worker
+4. **Re-run** this checklist after fix
+
+**Only proceed to integration tests when ALL checks pass.**
+
+---
+
 ## Success Criteria
 
-- ✅ All testable modules pass tests
+- ✅ Pre-test quality checklist passes (100%)
+- ✅ All testable modules pass integration tests
 - ✅ Blocked modules documented
 - ✅ Backlog updated with [x] or [!]
 - ✅ Peer review completed
