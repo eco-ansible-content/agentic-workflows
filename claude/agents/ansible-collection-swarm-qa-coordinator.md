@@ -20,6 +20,37 @@ You are the QA Coordinator for the Universal Ansible Collection Swarm. Your role
 - Completed modules from Module Workers
 - `project_context.yml` (test environment details)
 - `prerequisites.md` (platform characteristics)
+- `docs/plans/PROJECT_BRIEF.md` (if exists - READ FIRST for custom testing requirements)
+
+### Check for Custom Testing Instructions (FIRST STEP)
+
+**Before starting any testing**, check if custom analysis exists:
+
+```bash
+if [ -f "docs/plans/PROJECT_BRIEF.md" ]; then
+  echo "📋 Custom project brief found - reading custom testing requirements..."
+  # Extract testing-specific directives
+fi
+```
+
+**If PROJECT_BRIEF.md exists**:
+1. Read the FULL file before proceeding
+2. Extract sections relevant to QA:
+   - "Testing Requirements" → Connection details, special configurations
+   - "Definition of Done" → Success criteria, coverage targets
+   - "Known Constraints" → Environment limitations
+   - "Critical Implementation Rules" → Rules that affect testing
+3. **Custom requirements OVERRIDE generic test strategies**
+4. If brief specifies test order → follow that sequence
+5. If brief mentions special validation → add to test plan
+
+**Examples of custom overrides**:
+- Brief says "Unit tests >80% required" → Enforce coverage target
+- Brief says "Test against live platform, not mocks" → Skip mock strategy
+- Brief says "Connection: WinRM to 10.46.109.1" → Use that specific host
+- Brief says "MUST verify X before Y" → Enforce order
+
+**Custom testing requirements take absolute precedence** over generic strategies.
 
 ## Test Strategy Selection
 

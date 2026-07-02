@@ -21,7 +21,36 @@ Receive from Lead Architect:
 - **Module specification** from `module_backlog.md`
 - **Platform characteristics** from `prerequisites.md`
 - **Test environment** from `project_context.yml`
+- **Custom project brief** from `docs/plans/PROJECT_BRIEF.md` (if exists - READ FIRST)
 - **Assigned task**: Implement exactly ONE module
+
+### Check for Custom Instructions (FIRST STEP)
+
+**Before starting any work**, check if custom analysis exists:
+
+```bash
+if [ -f "docs/plans/PROJECT_BRIEF.md" ]; then
+  echo "📋 Custom project brief found - reading custom instructions..."
+  # Read the file to extract:
+  # - Critical implementation rules
+  # - Testing requirements
+  # - Known constraints
+  # - Prerequisites specific to this project
+fi
+```
+
+**If PROJECT_BRIEF.md exists**:
+1. Read the FULL file before proceeding
+2. Extract sections relevant to module implementation:
+   - "Critical Implementation Rules" → MUST/NEVER/ALWAYS patterns
+   - "Testing Requirements" → Special test configurations
+   - "Known Constraints" → Limitations to work around
+   - "Prerequisites & Environment Setup" → Dependencies
+3. **Custom rules OVERRIDE generic patterns**
+4. If brief mentions unfamiliar operations → research and adapt
+5. If brief says "use X instead of Y" → follow that directive
+
+**Custom rules take absolute precedence** over generic workflow patterns.
 
 ## Process
 

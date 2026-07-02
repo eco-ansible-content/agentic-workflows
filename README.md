@@ -12,6 +12,7 @@ A collection of intelligent agent swarms that autonomously build, enhance, and m
 
 **Key Features**:
 - ✅ **100% Autonomous** - Answer 2-3 questions, then fully hands-off
+- ✅ **Custom Analysis Support** (NEW v0.0.3) - Paste your pre-analysis, agents follow automatically
 - ✅ **Universal Platform Support** - Learns ANY platform through research, not templates
 - ✅ **Multi-Mode Operation** - Create new or enhance existing projects
 - ✅ **Self-Correcting** - 3-attempt recovery, degraded environment support
@@ -122,10 +123,21 @@ Then restart Claude Code.
 
 **Slash Command** (Recommended):
 ```bash
-# Universal swarm - works for ANY platform, any scope
+# Standard mode - works for ANY platform, any scope
 /ansible-collection-swarm TASK-XXX      # Single module
 /ansible-collection-swarm EPIC-XXX      # All modules in Epic
 /ansible-collection-swarm ANSTRAT-XXX   # All modules across all Epics
+
+# NEW v0.0.3: With custom analysis (paste after ticket key)
+/ansible-collection-swarm EPIC-XXX
+
+[Paste your analysis here]
+Current: 8/97 modules
+Missing: Templates, Networks
+Rules: ALWAYS use SDK, NEVER use mocks
+Prerequisites: Clean VMs first
+
+# See docs/CUSTOM-ANALYSIS.md for details
 
 # Windows swarm - legacy
 /windows-collection-swarm EPIC-XXX
@@ -143,6 +155,7 @@ Agent({
 ## 📖 Documentation
 
 - **[Getting Started](GETTING-STARTED.md)** - Start here! Build your first collection in 10 minutes
+- **[Custom Analysis Guide](docs/CUSTOM-ANALYSIS.md)** - NEW v0.0.3: Paste analysis, agents follow automatically
 - **[Installation Guide](claude/INSTALL.md)** - Detailed installation options
 - **[Quick Start (Universal Swarm)](claude/ansible-collection-swarm/QUICKSTART.md)** - 5-minute quick reference
 - **[Comprehensive Guide](claude/ansible-collection-swarm/GETTING-STARTED.md)** - Deep dive into all features
@@ -336,4 +349,4 @@ If you find this useful, please star the repository!
 - [Quick Start](claude/ansible-collection-swarm/QUICKSTART.md)
 - [Documentation](claude/)
 
-**Current Version**: 0.0.2 (Beta - Not Production Ready)
+**Current Version**: 0.0.3 (Beta - Not Production Ready)

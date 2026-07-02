@@ -63,7 +63,249 @@ The scope is determined automatically by the Jira Ingestion Specialist.
 
 ## Core Directives
 
-### Phase 0: Gather Context (REQUIRED FIRST STEP)
+### Phase 0: Context Gathering & Analysis Processing
+
+#### Phase 0.1: Process Custom Analysis (if provided)
+
+**Check if user provided custom analysis** in the prompt.
+
+**If custom analysis is provided**, process it BEFORE gathering context from user:
+
+##### Step 1: Parse Analysis (Universal Format Support)
+
+**Extract sections using pattern matching** (look for these patterns in ANY order):
+
+```python
+# Patterns to detect (case-insensitive, flexible matching)
+PATTERNS = {
+    "current_state": ["current state", "progress", "status", "we have", "completed"],
+    "requirements": ["requirements", "scope", "must have", "needed", "total"],
+    "gap": ["gap", "missing", "todo", "pending", "not done", "blockers"],
+    "rules": ["critical", "must", "never", "always", "rules", "do first", "before"],
+    "prerequisites": ["prerequisites", "setup", "before", "first", "environment", "infrastructure"],
+    "testing": ["testing", "test", "validation", "qa", "integration", "unit"],
+    "constraints": ["constraints", "limitations", "known issues", "problems"],
+    "definition_of_done": ["definition of done", "checklist", "success criteria", "complete when"],
+    "priority": ["priority", "order", "sequence", "phase", "immediate", "high", "critical"]
+}
+```
+
+**Handle ANY format**:
+- **Tables** (`| Header | Data |`) → Parse into structured data
+- **Checklists** (`- [ ]`, `- [x]`) → Extract done/pending status
+- **Numbered lists** → Sequential steps
+- **Bullet lists** → Action items
+- **Headers** (`##`, `###`) → Sections
+- **Emphasis** (`**bold**`, `*italic*`, `` `code` ``) → Important items
+- **Keywords**: CRITICAL, MUST, NEVER, ALWAYS, DO FIRST → High priority rules
+- **Freeform text** → Extract sentences with keywords
+
+##### Step 2: Create PROJECT_BRIEF.md
+
+**Auto-generate structured brief** at `docs/plans/PROJECT_BRIEF.md`:
+
+```markdown
+# Project Brief: [Ticket ID]
+
+**Source**: User-provided analysis  
+**Generated**: [ISO timestamp]  
+**Status**: Active
+
+---
+
+## Analysis Summary
+
+[1-2 paragraph summary of key points from user analysis]
+
+---
+
+## Current State
+
+[Extract and structure "current state" / "progress" / "we have" content]
+
+**What exists**:
+- [Item 1]
+- [Item 2]
+
+**Current progress**: [extracted metrics, e.g., "8/97 modules"]
+
+---
+
+## Requirements
+
+[Extract "requirements" / "scope" / "must have" content]
+
+**Total scope**:
+- [Requirement 1]
+- [Requirement 2]
+
+---
+
+## Gap Analysis
+
+[Extract "missing" / "gap" / "TODO" / "blockers" content]
+
+**What's missing**:
+- [Gap 1]
+- [Gap 2]
+
+**Blockers**:
+- [Blocker 1]
+
+---
+
+## Critical Implementation Rules
+
+[Extract rules - look for MUST/NEVER/ALWAYS/DO FIRST/BEFORE patterns]
+
+**Mandatory**:
+1. [MUST rule 1]
+2. [MUST rule 2]
+
+**Forbidden**:
+1. [NEVER rule 1]
+
+**Patterns to follow**:
+1. [ALWAYS rule 1]
+2. [Use X instead of Y]
+
+---
+
+## Prerequisites & Environment Setup
+
+[Extract "prerequisites" / "setup" / "before" / "first" / "environment" content]
+
+**Execution order** (from Priority indicators):
+
+**Priority 1 (Immediate)**:
+- [Step 1]
+- [Step 2]
+
+**Priority 2 (High)**:
+- [Step 3]
+
+**Environment requirements**:
+- [Requirement 1]
+
+---
+
+## Testing Requirements
+
+[Extract testing-related content]
+
+**Connection details**:
+- [Connection info]
+
+**Test variables**:
+- [Variable 1]
+
+**Special requirements**:
+- [Requirement 1]
+
+---
+
+## Known Constraints
+
+[Extract "constraints" / "limitations" / "known issues" content]
+
+**Environment limitations**:
+- [Constraint 1]
+
+**Development constraints**:
+- [Constraint 2]
+
+---
+
+## Definition of Done
+
+[Extract "definition of done" / "checklist" / "success criteria" content]
+
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+
+---
+
+## Custom Execution Steps
+
+**Unfamiliar steps detected** (not part of standard workflow):
+
+[Identify steps that aren't standard: read Jira, scaffold, implement modules, test, deliver]
+
+- **Step**: [Custom step name]
+  - **Phase**: [before_prerequisites / before_build / during_qa / etc.]
+  - **Agent**: [suggested agent to handle this]
+  - **Details**: [specifics from analysis]
+
+---
+
+## Additional Context
+
+[Any content that didn't match patterns above - include verbatim]
+
+---
+
+## Integration with Standard Workflow
+
+**Standard phases**:
+1. Jira Ingestion
+2. Foundation (scaffold)
+3. Prerequisites
+4. Module Build
+5. QA
+6. Refactor
+7. Release
+8. CI Validation
+9. Learning
+
+**Custom modifications** (from this analysis):
+- Insert before Phase 3: [Custom setup steps]
+- Add to Phase 5: [Custom QA requirements]
+- Override Phase X: [Custom approach]
+```
+
+##### Step 3: Update project_context.yml
+
+**Add analysis metadata**:
+
+```yaml
+analysis:
+  provided: true
+  source: user_input
+  timestamp: [ISO timestamp]
+  brief_file: docs/plans/PROJECT_BRIEF.md
+  
+custom_execution:
+  has_prerequisites: [true/false]
+  prerequisite_count: [number]
+  
+  has_custom_rules: [true/false]
+  critical_rules_count: [number]
+  
+  has_custom_qa: [true/false]
+  
+  unfamiliar_steps:
+    - step: "[step name]"
+      phase: "[workflow phase]"
+      agent: "[suggested agent]"
+      priority: "[immediate/high/medium]"
+```
+
+##### Step 4: Log Summary
+
+```
+📋 Custom analysis processed:
+   ✅ Created: docs/plans/PROJECT_BRIEF.md
+   📊 Extracted: [N] rules, [N] prerequisites, [N] constraints
+   🔧 Custom steps: [N] unfamiliar operations identified
+   
+   All agents will follow PROJECT_BRIEF.md instructions.
+```
+
+**If NO custom analysis provided**: Skip to Phase 0.2 (standard context gathering)
+
+---
+
+#### Phase 0.2: Gather Context (REQUIRED FIRST STEP)
 
 **BEFORE starting any work**, you MUST gather essential project context from the user.
 

@@ -13,10 +13,39 @@ Autonomous multi-agent system that builds **ANY** Ansible collection from Jira E
 
 **REQUIRED**: Invoke lead-architect agent directly:
 
+**Without custom analysis**:
 ```javascript
 Agent({
   description: "Build Ansible collection from Epic",
-  prompt: "Build collection from Jira Epic <EPIC-KEY>. Args: <user-provided-args>",
+  prompt: "Build collection from Jira ticket <TICKET-KEY>",
+  subagent_type: "agentic-workflows/ansible-collection-swarm:lead-architect"
+})
+```
+
+**With custom analysis** (extracts everything after ticket key):
+```javascript
+// Extract analysis from user message (everything after ticket key)
+const userMessage = "<full-user-message>";
+const analysisMatch = userMessage.match(/(TASK|EPIC|ANSTRAT)-\d+\s+([\s\S]+)/);
+const customAnalysis = analysisMatch ? analysisMatch[2].trim() : "";
+
+Agent({
+  description: "Build Ansible collection with custom analysis",
+  prompt: `Build collection from Jira ticket <TICKET-KEY>.
+
+${customAnalysis ? `
+CUSTOM ANALYSIS PROVIDED BY USER:
+---
+${customAnalysis}
+---
+
+CRITICAL: 
+1. Parse this analysis in Phase 0.1
+2. Create docs/plans/PROJECT_BRIEF.md with structured content
+3. Extract: current state, requirements, rules, prerequisites, constraints
+4. Identify unfamiliar steps and integrate into workflow
+5. Pass PROJECT_BRIEF.md path to all agents
+` : ''}`,
   subagent_type: "agentic-workflows/ansible-collection-swarm:lead-architect"
 })
 ```
@@ -48,6 +77,7 @@ Claude Code will prompt for bash command permissions. **To enable true autonomy:
 
 ## Quick Invocation
 
+### Standard Mode
 ```
 /ansible-collection-swarm EPIC-XXX
 ```
@@ -59,6 +89,64 @@ Or with more context:
 /ansible-collection-swarm Enhance microsoft.scvmm with modules from EPIC-5678
 /ansible-collection-swarm Add modules to existing collection at ~/projects/my-collection
 ```
+
+### **NEW: With Custom Analysis** (Recommended for Complex Projects)
+
+Paste your analysis directly after the command:
+
+```
+/ansible-collection-swarm EPIC-XXX
+
+[Your analysis here - ANY format]
+
+This can include:
+- Gap analysis (current state vs required)
+- Critical implementation rules
+- Environment prerequisites
+- Testing requirements
+- Known constraints
+- Execution order
+- Definition of done
+- ANY other context
+
+Format: Tables, bullets, numbered lists, freeform text - ALL work!
+```
+
+**What happens**:
+1. Lead Architect receives your analysis
+2. Automatically creates `docs/plans/PROJECT_BRIEF.md`
+3. Parses rules, constraints, prerequisites
+4. All agents follow your custom instructions
+5. Unfamiliar steps are executed automatically
+
+**Example**:
+```
+/ansible-collection-swarm ANSTRAT-2120
+
+## Current State
+- Have: 8/97 modules (VM lifecycle only)
+- Missing: Templates, Networks, Storage, RBAC
+
+## Critical Rules
+1. MUST populate SCVMM fabric BEFORE writing new modules
+2. NEVER use mocks - test against live SCVMM 2022
+3. Unit tests >80% coverage required (currently 0%)
+4. Use ansible.windows >= 2.0.0
+
+## Environment Prerequisites (DO FIRST)
+Priority 1:
+- Clean up 13 leftover VMs (free 6GB RAM)
+- Create Logical Network
+- Create VM Template
+- Register second host in SCVMM
+
+## Testing
+Connection: WinRM to 10.46.109.1
+Variables: scvmm_server=WIN-5UL8TNLBCNF.scvmm.local
+macOS: export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+```
+
+**Result**: Agents automatically follow your specific requirements!
 
 ## What Happens
 

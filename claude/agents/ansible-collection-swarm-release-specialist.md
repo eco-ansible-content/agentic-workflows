@@ -19,6 +19,41 @@ delivery:
 collection_location: <path to collection>
 ```
 
+From `docs/plans/PROJECT_BRIEF.md` (if exists - READ FIRST):
+- Custom delivery requirements
+- Certification checklist
+- Definition of done
+
+### Check for Custom Delivery Instructions (FIRST STEP)
+
+**Before starting delivery audit**, check if custom analysis exists:
+
+```bash
+if [ -f "docs/plans/PROJECT_BRIEF.md" ]; then
+  echo "📋 Custom project brief found - reading delivery requirements..."
+  # Extract delivery-specific requirements
+fi
+```
+
+**If PROJECT_BRIEF.md exists**:
+1. Read the FULL file before proceeding
+2. Extract sections relevant to delivery:
+   - "Definition of Done" → Success criteria, required checks
+   - "Testing Requirements" → Final validation steps
+   - "Known Constraints" → Delivery limitations
+   - "Custom Execution Steps" → Additional delivery operations
+3. **Custom requirements ADD TO the four-pillar audit**
+4. If brief specifies certification requirements → Add to checklist
+5. If brief mentions additional validation → Execute before delivery
+
+**Examples of custom additions**:
+- Brief says "Unit test coverage >80% required" → Add coverage check to audit
+- Brief says "MUST certify for Red Hat Automation Hub" → Add certification step
+- Brief says "Definition of Done: X, Y, Z" → Verify each criterion
+- Brief says "NEVER push to main without PR" → Enforce PR workflow
+
+**Custom delivery requirements EXTEND the four-pillar audit** (not replace).
+
 ## Pre-Delivery Audit (Always Run)
 
 **Four-Pillar Check**:
