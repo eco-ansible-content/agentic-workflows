@@ -247,13 +247,13 @@ Your decision tree:
 
 **Scenario 2: Partial Success** (degraded environment)
 ```json
-Agent reports: "SCVMM Console installed, Server failed. 8/15 modules testable."
+Agent reports: "Platform Console installed, Server failed. 8/15 modules testable."
 
 Your action:
 1. Accept degraded environment (>50% testable)
 2. Update module backlog:
    - Mark testable modules: [ ] TODO
-   - Mark blocked modules: [SKIP] scvmm_host (requires SCVMM Server)
+   - Mark blocked modules: [SKIP] example_collection_host (requires Platform Server)
 3. Proceed to Build Phase with testable modules
 4. Report to user: "Building 8/15 modules in degraded environment"
 ```

@@ -86,7 +86,7 @@ Categorize failures by type and agent:
 
 | Agent | Phase | Failure Type | Count | Example |
 |-------|-------|--------------|-------|---------|
-| Platform Prerequisite | Install | SCVMM installer hung | 1 | "Setup.exe timeout after 30min" |
+| Platform Prerequisite | Install | Platform installer hung | 1 | "Setup.exe timeout after 30min" |
 | Module Worker | Build | PowerShell syntax error | 3 | "Missing closing brace in module X" |
 | QA Coordinator | Test | Idempotency failure | 2 | "Module changes state on second run" |
 | CI Validation | Pipeline | Sanity test fail | 5 | "Missing DOCUMENTATION block" |
@@ -106,7 +106,7 @@ For each failure, determine:
 **Example Analysis**:
 
 ```markdown
-## Failure: SCVMM Installation Hung
+## Failure: Platform Installation Hung
 
 **What happened**: 
 - setup.exe started but hung at "Configuring database"
@@ -114,17 +114,17 @@ For each failure, determine:
 
 **Why it happened**:
 - SQL Server was running but database collation was incompatible
-- Setup couldn't connect to create SCVMM database
+- Setup couldn't connect to create Platform database
 
 **Could agent have prevented it?**
-YES - Agent should have verified SQL Server collation BEFORE running SCVMM setup
+YES - Agent should have verified SQL Server collation BEFORE running Platform setup
 
 **Was it predictable?**
-YES - SCVMM requires specific SQL collation (SQL_Latin1_General_CP1_CI_AS)
+YES - Platform requires specific SQL collation (SQL_Latin1_General_CP1_CI_AS)
 
 **What knowledge was missing?**
 - SQL Server pre-requisite checks (collation, version, services)
-- SCVMM installer prerequisites validation script
+- Platform installer prerequisites validation script
 ```
 
 **Step 2: Ask Clarifying Questions**
@@ -134,13 +134,13 @@ Use AskUserQuestion tool to understand user's perspective:
 **Example Questions**:
 
 ```
-LEARNING SESSION: SCVMM Installation Failure
+LEARNING SESSION: Platform Installation Failure
 
-I'm analyzing the SCVMM installation failure to improve future builds.
+I'm analyzing the Platform installation failure to improve future builds.
 
 Question 1: SQL Server Validation
 The installer hung because SQL collation was incompatible.
-Should the Platform Prerequisite agent validate SQL collation BEFORE installing SCVMM?
+Should the Platform Prerequisite agent validate SQL collation BEFORE installing Platform?
 
 Options:
 A) Yes, add pre-installation validation for SQL settings
@@ -156,7 +156,7 @@ B) Reduce to 15min and check logs sooner
 C) Add progress monitoring (check log file growth)
 
 Question 3: Degraded Environment
-When SCVMM install fails, agent offered console-only install.
+When Platform install fails, agent offered console-only install.
 Was this the right approach for your use case?
 
 Options:
@@ -229,26 +229,26 @@ Transform analysis into actionable lessons:
 
 **Example**:
 ```markdown
-## Lesson #001: SQL Server Collation Check for SCVMM
+## Lesson #001: SQL Server Collation Check for Platform
 
 **Date**: 2026-05-27
-**Trigger**: SCVMM installation hung during database setup
-**Collection**: microsoft.scvmm
+**Trigger**: Platform installation hung during database setup
+**Collection**: microsoft.example_collection
 **Epic**: WINOPS-2345
 
 **Context**:
 Platform Prerequisite Specialist installed SQL Server successfully,
-then proceeded to install SCVMM. SCVMM setup hung at "Configuring database"
+then proceeded to install Platform. Platform setup hung at "Configuring database"
 step for 30 minutes before timeout.
 
 **What Went Wrong**:
-SCVMM requires SQL Server with specific collation (SQL_Latin1_General_CP1_CI_AS).
+Platform requires SQL Server with specific collation (SQL_Latin1_General_CP1_CI_AS).
 SQL Server was installed with default collation (Windows default), which was
 incompatible. Setup couldn't create database and hung silently.
 
 **Root Cause**:
 Agent installed SQL Server without verifying collation compatibility.
-No pre-flight checks before SCVMM installation.
+No pre-flight checks before Platform installation.
 
 **Impact**:
 - Agent: platform-prerequisite-specialist
@@ -263,9 +263,9 @@ version, or service configuration.
 **Action Taken**:
 - [x] Updated agent: platform-prerequisite-specialist.md
   - Added SQL Server validation section
-  - Added collation check before SCVMM install
+  - Added collation check before Platform install
 - [x] Updated guide: platform-installation-guide.md
-  - Added SCVMM prerequisites checklist
+  - Added Platform prerequisites checklist
   - Added SQL collation verification script
 - [x] Created example: examples/prerequisites/sql_validation.ps1
   - Reusable SQL health check script
@@ -280,7 +280,7 @@ version, or service configuration.
 3. Update prerequisites.md template to include dependency checks
 
 **Validation**:
-- Next SCVMM collection: Should detect SQL collation issue and fix before install
+- Next Platform collection: Should detect SQL collation issue and fix before install
 - Metrics: Track "SQL-related installation failures" → should decrease to 0
 ```
 
@@ -294,7 +294,7 @@ Organize lessons by category:
 | **Installation Robustness** | Better installation handling | Progress monitoring for hung installers |
 | **Testing Intelligence** | Smarter test strategies | Detect idempotency issues earlier |
 | **Error Recovery** | Better failure handling | Specific recovery for known errors |
-| **Documentation Gaps** | Missing knowledge in guides | SCVMM SQL requirements not documented |
+| **Documentation Gaps** | Missing knowledge in guides | Platform SQL requirements not documented |
 | **Agent Communication** | Inter-agent coordination | QA should signal Module Worker about common errors |
 | **User Guidance** | Better user interactions | Clearer options when escalating |
 
@@ -348,13 +348,13 @@ function Test-SqlServerReady {
 }
 ```
 
-**Before installing SCVMM**:
+**Before installing Platform**:
 ```powershell
-# Validate SQL Server meets SCVMM requirements
+# Validate SQL Server meets Platform requirements
 Test-SqlServerReady -RequiredCollation "SQL_Latin1_General_CP1_CI_AS"
 ```
 
-**LESSON**: Learned from Lesson #001 - Always validate SQL collation before SCVMM
+**LESSON**: Learned from Lesson #001 - Always validate SQL collation before Platform
 ```
 
 **Step 2: Update Guides and Resources**
@@ -363,7 +363,7 @@ Update relevant documentation:
 
 ```bash
 # Update platform-installation-guide.md
-# Add SCVMM prerequisites section with SQL requirements
+# Add Platform prerequisites section with SQL requirements
 
 # Update 5-pillars-guide.md if implementation pattern learned
 
@@ -403,7 +403,7 @@ Update or create `docs/lessons_learned.md`:
 ## Index by Category
 
 ### Prerequisite Validation (5 lessons)
-- [#001](#lesson-001) SQL Server Collation Check for SCVMM
+- [#001](#lesson-001) SQL Server Collation Check for Platform
 - [#003](#lesson-003) Hyper-V Installation Requires Reboot Handling
 - [#007](#lesson-007) IIS Features Must Be Enabled Before App Install
 - [#012](#lesson-012) PostgreSQL Port Conflict Detection
@@ -627,7 +627,7 @@ C) Is there a progress indicator we should monitor?"
 ```
 "We assumed SQL Server default settings are sufficient.
 Given the collation failure:
-A) Should we validate SQL settings before SCVMM install?
+A) Should we validate SQL settings before Platform install?
 B) Should we install SQL with specific collation upfront?
 C) Should we document SQL requirements but not enforce?"
 ```
@@ -685,13 +685,13 @@ Invoke-WebRequest -Uri $sqlUrl -OutFile "C:\Installers\SQL.exe"
 C:\Installers\SQL.exe /ACTION=Install /QUIET /IACCEPTSQLSERVERLICENSETERMS
 
 # LESSON #001: Validate SQL before dependent platform installation
-# Some platforms (SCVMM, ConfigMgr) require specific SQL collation
+# Some platforms (Platform, ConfigMgr) require specific SQL collation
 function Test-SqlForPlatform {
     param([string]$PlatformName)
     
     # Platform-specific requirements
     $requirements = @{
-        "SCVMM" = @{ Collation = "SQL_Latin1_General_CP1_CI_AS" }
+        "Platform" = @{ Collation = "SQL_Latin1_General_CP1_CI_AS" }
         "ConfigMgr" = @{ Collation = "SQL_Latin1_General_CP1_CI_AS" }
     }
     
@@ -743,7 +743,7 @@ After each learning session, generate:
   "lessons_created": [
     {
       "lesson_id": "#001",
-      "title": "SQL Server Collation Check for SCVMM",
+      "title": "SQL Server Collation Check for Platform",
       "category": "Prerequisite Validation",
       "impact": "high | medium | low"
     }

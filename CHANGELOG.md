@@ -5,6 +5,45 @@ All notable changes to Agentic Workflows will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.31] - 2026-07-05
+
+### Added
+- **Strict Integration Test Isolation Rules** - Prevent cross-module test dependencies
+  - QA Coordinator: Added CRITICAL isolation rules with forbidden/correct patterns
+  - Module Worker: Enhanced Step 6 with mandatory isolation requirements
+  - PR Review Learnings: Added Pattern #0 (Test Isolation) - now 10 patterns total
+  - Test Isolation Checklist: 7 mandatory checks before accepting any integration test
+  
+### Changed
+- **All Examples Made Generic** - Removed project-specific references
+  - Replaced all SCVMM references with generic `example_resource`, `other_module`, etc.
+  - Replaced platform-specific terms with universal alternatives
+  - Examples now work for ANY project/platform (truly agnostic)
+- **QA Coordinator**: Enhanced test execution with one-module-at-a-time enforcement
+  - Added clear FORBIDDEN patterns (multi-module tests, cross-dependencies)
+  - Added CORRECT pattern with complete isolated test example
+  - Enhanced pre-test quality checklist with isolation verification
+- **Module Worker**: Test implementation now emphasizes isolation from the start
+  - Added isolation requirements before Step 6
+  - Complete self-contained test example with cleanup
+  - Mandatory Test Isolation Checklist included
+
+### Fixed
+- Cross-module test dependencies that cause cascade failures
+- Missing guidance on test structure and isolation
+
+### Documentation
+- Updated PR-REVIEW-LEARNINGS.md with Pattern #0 (Test Isolation)
+- Enhanced all agent examples to be platform-agnostic
+- Clarified test structure requirements
+
+**Breaking Changes**: None (test improvements are additive)
+
+**Migration**: Collections built before v0.0.31 may have cross-module test dependencies. Review integration tests for:
+- Missing `meta/main.yml` files
+- Cross-module calls (using other modules in tests)
+- Non-self-contained tests (relying on other tests for setup)
+
 ## [0.0.3] - 2026-07-02
 
 ### Added

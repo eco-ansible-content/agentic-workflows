@@ -390,8 +390,8 @@ Use AskUserQuestion tool to collect:
 
 **Scenario A: Found in current directory**
 ```bash
-# pwd: ~/projects/ansible-collections/microsoft-scvmm/
-# Contains: galaxy.yml with namespace: microsoft, name: scvmm
+# pwd: ~/projects/ansible-collections/microsoft-example_collection/
+# Contains: galaxy.yml with namespace: microsoft, name: example_collection
 
 Action: Skip Question 3, use current directory automatically
 Reason: Developer is already in the collection directory
@@ -399,12 +399,12 @@ Reason: Developer is already in the collection directory
 
 **Scenario B: Found in ansible_collections (read-only)**
 ```bash
-# Found at: ~/.ansible/collections/ansible_collections/microsoft/scvmm/
+# Found at: ~/.ansible/collections/ansible_collections/microsoft/example_collection/
 
 Action: Ask Question 3
 Options shown:
   - Current directory (if pwd contains galaxy.yml)
-  - Swarm workspace (~/agentic-workflow-collections/microsoft/scvmm)
+  - Swarm workspace (~/agentic-workflow-collections/microsoft/example_collection)
   - Custom path (user specifies)
   
 Reason: ansible_collections is installation directory (shouldn't modify directly)
@@ -413,13 +413,13 @@ Reason: ansible_collections is installation directory (shouldn't modify directly
 **Scenario C: Found in multiple locations**
 ```bash
 # Found in:
-#   1. ~/projects/scvmm-fork/
-#   2. ~/agentic-workflow-collections/microsoft/scvmm/
+#   1. ~/projects/example_collection-fork/
+#   2. ~/agentic-workflow-collections/microsoft/example_collection/
 
 Action: Ask Question 3
 Options shown:
-  - Current directory: ~/projects/scvmm-fork/
-  - Swarm workspace: ~/agentic-workflow-collections/microsoft/scvmm/
+  - Current directory: ~/projects/example_collection-fork/
+  - Swarm workspace: ~/agentic-workflow-collections/microsoft/example_collection/
   - Custom path: (user specifies)
   
 Reason: Ambiguous - need user to choose which to work on
@@ -669,12 +669,12 @@ fi
 
 **Example 1: Developer in cloned repo**
 ```bash
-# Current directory: ~/projects/ansible-collections/microsoft-scvmm/
-# galaxy.yml exists with namespace: microsoft, name: scvmm
+# Current directory: ~/projects/ansible-collections/microsoft-example_collection/
+# galaxy.yml exists with namespace: microsoft, name: example_collection
 
 Detection:
 ✅ Location 1: Current directory matches
-📁 Path: /Users/dev/projects/ansible-collections/microsoft-scvmm
+📁 Path: /Users/dev/projects/ansible-collections/microsoft-example_collection
 🔧 Mode: ENHANCEMENT
 💡 Work in place (no file copying needed)
 ```
@@ -682,17 +682,17 @@ Detection:
 **Example 2: Developer using swarm workspace**
 ```bash
 # Current directory: anywhere
-# Collection exists at: ~/agentic-workflow-collections/microsoft/scvmm/
+# Collection exists at: ~/agentic-workflow-collections/microsoft/example_collection/
 
 Detection:
 ✅ Location 2: Swarm workspace matches
-📁 Path: /Users/dev/agentic-workflow-collections/microsoft/scvmm
+📁 Path: /Users/dev/agentic-workflow-collections/microsoft/example_collection
 🔧 Mode: ENHANCEMENT
 ```
 
 **Example 3: Collection installed via ansible-galaxy**
 ```bash
-# Collection at: ~/.ansible/collections/ansible_collections/microsoft/scvmm/
+# Collection at: ~/.ansible/collections/ansible_collections/microsoft/example_collection/
 
 Detection:
 ✅ Location 3: Ansible collections path matches
@@ -706,11 +706,11 @@ Ask user:
 
 **Example 4: User specifies path**
 ```bash
-User: "Enhance collection at ~/my-projects/scvmm-fork/"
+User: "Enhance collection at ~/my-projects/example_collection-fork/"
 
 Detection:
 ✅ Location 4: User-specified path matches
-📁 Path: /Users/dev/my-projects/scvmm-fork
+📁 Path: /Users/dev/my-projects/example_collection-fork
 🔧 Mode: ENHANCEMENT
 ```
 
@@ -721,7 +721,7 @@ Detection:
 Detection:
 📦 NEW COLLECTION
 🏗️ Mode: FULL BUILD
-📁 Target: ~/agentic-workflow-collections/microsoft/scvmm
+📁 Target: ~/agentic-workflow-collections/microsoft/example_collection
 ```
 
 ## Workflow Selection

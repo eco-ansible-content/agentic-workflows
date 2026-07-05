@@ -98,7 +98,7 @@ Configuration:
 Configuration:
 - Epic Key: ANSTRAT-12345
 - Namespace: microsoft
-- Collection Name: scvmm
+- Collection Name: example_collection
 - Batch Size: 3
 ```
 

@@ -167,7 +167,7 @@ In collection workspace: `docs/lessons_learned.md`:
 **Tag lessons by characteristics**, not platforms:
 
 - "API rate limiting" → Applies to: Azure, AWS, SolarWinds, etc.
-- "SQL collation check" → Applies to: SCVMM, SQL-based apps
+- "SQL collation check" → Applies to: Platform, SQL-based apps
 - "Idempotency detection" → Applies to: ALL modules
 
 ## Success Criteria
@@ -204,7 +204,7 @@ In collection workspace: `docs/lessons_learned.md`:
     "detailed_markdown_files": 1
   },
   "recommendations": [
-    "Add SQL collation validation before SCVMM install"
+    "Add SQL collation validation before Platform install"
   ]
 }
 ```

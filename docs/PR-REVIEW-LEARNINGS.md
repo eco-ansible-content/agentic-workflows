@@ -9,7 +9,84 @@ Date: 2026-06-30
 
 ---
 
-## 🚨 Top 9 Critical Patterns (Universal)
+## 🚨 Top 10 Critical Patterns (Universal)
+
+### **0. Test Isolation - Cross-Module Dependencies** ⭐ NEW
+**Issue**: Integration tests depend on other modules or group multiple modules in one test
+**Root Cause**: Creating "all_modules" test directories or calling other modules within tests
+
+**Universal Pattern - FORBIDDEN**:
+```yaml
+# ❌ WRONG - All modules in one test
+tests/integration/targets/all_modules/tasks/main.yml:
+  - example_resource: ...
+  - other_module: ...
+  - another_module: ...
+
+# ❌ WRONG - Dependencies in meta
+tests/integration/targets/other_module/meta/main.yml:
+  dependencies:
+    - example_resource  # Creates coupling!
+
+# ❌ WRONG - Using other modules in test
+tests/integration/targets/other_module/tasks/main.yml:
+  - name: Create host first
+    example_resource:  # Testing other_module, shouldn't call example_resource
+      name: test-host
+```
+
+**Universal Pattern - CORRECT**:
+```yaml
+# ✅ RIGHT - Each module isolated
+tests/integration/targets/
+├── example_resource/
+│   ├── meta/main.yml         # dependencies: [] (EMPTY)
+│   └── tasks/main.yml        # Uses ONLY example_resource
+├── other_module/
+│   ├── meta/main.yml         # dependencies: [] (EMPTY)
+│   └── tasks/main.yml        # Uses ONLY other_module
+
+# ✅ RIGHT - Self-contained test
+tests/integration/targets/example_resource/tasks/main.yml:
+  - set_fact:
+      test_name: "test-{{ 999999 | random }}"
+  - example_resource:  # ONLY this module
+      name: "{{ test_name }}"
+      state: present
+  # Cleanup at end
+  - example_resource:
+      name: "{{ test_name }}"
+      state: absent
+```
+
+**Universal Learning**:
+- ❌ **NEVER** create multi-module test directories
+- ❌ **NEVER** add dependencies in `meta/main.yml` (always `dependencies: []`)
+- ❌ **NEVER** call other modules within a module's integration test
+- ✅ **ALWAYS** make tests fully self-contained and isolated
+- ✅ **ALWAYS** use random/unique names to avoid conflicts
+- ✅ **ALWAYS** clean up test resources at end
+- ✅ **Test must run standalone**: `ansible-test integration MODULE_NAME`
+
+**Why This Matters**:
+- If module A is broken, module B's test shouldn't fail (cascade failures)
+- Tests can run in parallel without conflicts
+- Each test verifies exactly ONE module (clear pass/fail)
+- Test failures point to exact problem location
+
+**Action - Integration Test Checklist**:
+```bash
+# Before accepting ANY integration test:
+1. One module per tests/integration/targets/MODULE_NAME/ directory? ✓
+2. meta/main.yml has dependencies: [] (empty)? ✓
+3. Test uses ONLY the module being tested? ✓
+4. No calls to other modules in test file? ✓
+5. Uses random names ({{ 999999 | random }})? ✓
+6. Cleans up resources at end? ✓
+7. Can run standalone: ansible-test integration MODULE_NAME? ✓
+```
+
+---
 
 ### 1. **AI Hallucination - Non-Existent APIs/Features**
 **Issue**: Used features that don't exist

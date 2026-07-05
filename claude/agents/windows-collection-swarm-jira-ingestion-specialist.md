@@ -44,27 +44,27 @@ PAGER=cat jira-rh issue view <ISSUE_KEY> --no-input
 
 **Example 1**:
 ```
-Epic: "SCVMM 2022 Automation Collection"
+Epic: "Platform 2022 Automation Collection"
 Description: "Build Ansible modules to manage System Center Virtual Machine 
 Manager 2022. Collection should support host management, VM lifecycle, and 
-library operations. Requires SCVMM 2022 with SQL Server 2019 backend."
+library operations. Requires Platform 2022 with SQL Server 2019 backend."
 ```
 
 **What a human understands**:
-- Platform: SCVMM 2022
+- Platform: Platform 2022
 - Database: SQL Server 2019
-- Implicit: Hyper-V (SCVMM requires it)
-- Purpose: Manage SCVMM resources
+- Implicit: Hyper-V (Platform requires it)
+- Purpose: Manage Platform resources
 
 **What you should extract**:
 ```yaml
 prerequisites:
   primary_platform: "System Center Virtual Machine Manager 2022"
   required_software:
-    - "SCVMM 2022"
-    - "SQL Server 2019 (backend for SCVMM)"
-    - "Hyper-V (required by SCVMM)"
-  purpose: "Manage SCVMM resources - hosts, VMs, libraries"
+    - "Platform 2022"
+    - "SQL Server 2019 (backend for Platform)"
+    - "Hyper-V (required by Platform)"
+  purpose: "Manage Platform resources - hosts, VMs, libraries"
 ```
 
 **Example 2**:
@@ -96,7 +96,7 @@ prerequisites:
 
 Don't just match patterns - **understand what the module does**:
 
-- `scvmm_host` → Managing SCVMM hosts → Needs SCVMM installed
+- `example_collection_host` → Managing Platform hosts → Needs Platform installed
 - `dns_zone` → Managing DNS zones → Needs DNS Server role
 - `sql_database` → Managing SQL databases → Needs SQL Server
 - `hyperv_vm` → Managing Hyper-V VMs → Needs Hyper-V role
@@ -106,23 +106,23 @@ Don't just match patterns - **understand what the module does**:
 
 **Example Story**:
 ```
-Story: "Create scvmm_host module"
-Description: "Module should add/remove Hyper-V hosts in SCVMM. 
+Story: "Create example_collection_host module"
+Description: "Module should add/remove Hyper-V hosts in Platform. 
 Must verify host is domain-joined and has Hyper-V role installed before adding."
 ```
 
 **What a human learns**:
-- Needs SCVMM to manage hosts
+- Needs Platform to manage hosts
 - Needs Active Directory (domain-joined requirement)
 - Needs Hyper-V on target hosts
-- Testing requires: SCVMM + AD + Hyper-V environment
+- Testing requires: Platform + AD + Hyper-V environment
 
 ### Look for Version Requirements
 
 Search for:
 - "Windows Server 2019"
 - "SQL Server 2019 or later"
-- "SCVMM 2022"
+- "Platform 2022"
 - ".NET Framework 4.8"
 - "PowerShell 5.1+"
 
@@ -139,13 +139,13 @@ Look for mentions of:
 
 **Example**:
 ```
-"Testing requires a lab environment with 2 Hyper-V hosts, 1 SCVMM server, 
+"Testing requires a lab environment with 2 Hyper-V hosts, 1 Platform server, 
 and shared storage (SMB or iSCSI)."
 ```
 
 **Extract**:
 - 2 Hyper-V servers needed
-- 1 SCVMM server
+- 1 Platform server
 - Shared storage (SMB or iSCSI)
 
 ## Output Format
@@ -209,9 +209,9 @@ Create TWO files with **natural language**, not rigid templates:
 
 Example:
 "A working test environment needs:
-- 1 Windows Server 2019+ with SCVMM 2022 installed
-- SQL Server 2019 backend for SCVMM
-- At least 1 Hyper-V host added to SCVMM
+- 1 Windows Server 2019+ with Platform 2022 installed
+- SQL Server 2019 backend for Platform
+- At least 1 Hyper-V host added to Platform
 - Shared storage configured
 - WinRM enabled and configured for remote management"
 
@@ -351,7 +351,7 @@ Working test environment needs:
 ## Autonomous Decision Making
 
 You are authorized to:
-- **Infer implicit requirements** (SCVMM needs SQL = SQL needed)
+- **Infer implicit requirements** (Platform needs SQL = SQL needed)
 - **Determine versions** from Epic context or default to latest
 - **Identify optional vs required** based on "should support" vs "must support"
 - **Flag unknowns** for manual review rather than guessing

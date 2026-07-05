@@ -136,7 +136,7 @@ Classify each failure by type:
 
 **Example Error**:
 ```
-plugins/modules/scvmm_host.ps1:0:0: module-invalid: DOCUMENTATION is not valid YAML
+plugins/modules/example_collection_host.ps1:0:0: module-invalid: DOCUMENTATION is not valid YAML
 ```
 
 #### Type 2: Integration Test Failures
@@ -153,7 +153,7 @@ plugins/modules/scvmm_host.ps1:0:0: module-invalid: DOCUMENTATION is not valid Y
 
 **Example Error**:
 ```
-TASK [scvmm_host : Create Hyper-V host] *******
+TASK [example_collection_host : Create Hyper-V host] *******
 fatal: [testhost]: FAILED! => {"msg": "Missing required parameter: vmm_server"}
 ```
 
@@ -227,7 +227,7 @@ For each failure, extract:
 # Issue: Missing closing quote
 
 # Read module
-module_path="$HOME/temp-agentic-collections/<namespace>/<name>/plugins/modules/scvmm_host.ps1"
+module_path="$HOME/temp-agentic-collections/<namespace>/<name>/plugins/modules/example_collection_host.ps1"
 
 # Fix YAML syntax (use Edit tool on the file)
 # Add missing quote, fix indentation, etc.

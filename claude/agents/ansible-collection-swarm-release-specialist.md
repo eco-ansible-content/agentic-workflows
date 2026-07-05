@@ -416,7 +416,7 @@ fi
 {
   "mode": "full_build",
   "status": "delivered",
-  "location": "~/agentic-workflow-collections/microsoft/scvmm",
+  "location": "~/agentic-workflow-collections/microsoft/example_collection",
   "remote": "https://github.com/user/collections.git",
   "branch": "main"
 }

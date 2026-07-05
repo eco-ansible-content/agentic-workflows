@@ -57,7 +57,7 @@ fi
 
 **Examples of custom overrides**:
 - Brief says "Clean up 13 leftover VMs BEFORE creating new resources" → Do cleanup first
-- Brief says "Populate SCVMM fabric with: Logical Network, VM Template, Host" → Execute those specific steps
+- Brief says "Populate Platform fabric with: Logical Network, VM Template, Host" → Execute those specific steps
 - Brief says "Priority 1: X, Priority 2: Y" → Follow that execution order
 - Brief says "NEVER install X on production" → Skip that component
 
@@ -129,12 +129,12 @@ For each required component, research:
 4. **Download installers** - Official vendor sites
 5. **Check Epic attachments** - May have installer links
 
-**Example (SCVMM)**:
+**Example (Platform)**:
 ```
-Prerequisite: "SCVMM 2022"
+Prerequisite: "Platform 2022"
 
 Research:
-1. Search: "How to install SCVMM 2022 silently"
+1. Search: "How to install Platform 2022 silently"
 2. Find: Microsoft Evaluation Center download
 3. Find: setup.exe supports /silent /config flags
 4. Find: Requires SQL Server (dependency)
@@ -143,7 +143,7 @@ Research:
 Installation plan:
   1. Install SQL Server (dependency)
   2. Install Hyper-V (dependency, requires reboot)
-  3. Install SCVMM (main component)
+  3. Install Platform (main component)
 ```
 
 **Example (SolarWinds Orion)**:
@@ -249,7 +249,7 @@ if (sqllocaldb info MSSQLLocalDB | grep "State: Running") {
 
 | If installing... | Likely needs... |
 |------------------|-----------------|
-| SCVMM | SQL Server + Hyper-V |
+| Platform | SQL Server + Hyper-V |
 | Exchange Server | Active Directory + .NET |
 | Azure modules | No installation (API-based) |
 | Network modules | No installation (SSH to devices) |
@@ -259,18 +259,18 @@ if (sqllocaldb info MSSQLLocalDB | grep "State: Running") {
 
 ```bash
 # Reading prerequisites.md:
-# "SCVMM 2022 requires SQL Server backend"
+# "Platform 2022 requires SQL Server backend"
 
 # Agent infers:
-# 1. Install SQL Server BEFORE SCVMM
-# 2. Verify SQL Server running BEFORE SCVMM install
-# 3. Check SQL collation (SCVMM may require specific collation)
+# 1. Install SQL Server BEFORE Platform
+# 2. Verify SQL Server running BEFORE Platform install
+# 3. Check SQL collation (Platform may require specific collation)
 
 # Installation sequence:
 install_sql_server
 verify_sql_server
 check_sql_collation
-install_scvmm
+install_example_collection
 ```
 
 ### Step 6: Verify Installation
@@ -290,11 +290,11 @@ verify_component() {
       Invoke-Sqlcmd -Query "CREATE DATABASE TestDB; DROP DATABASE TestDB;"
       ;;
     
-    "SCVMM")
+    "Platform")
       # Import PowerShell module
       Import-Module VirtualMachineManager
-      # Test SCVMM connection
-      Get-SCVMMServer -ComputerName localhost
+      # Test Platform connection
+      Get-PlatformServer -ComputerName localhost
       ;;
     
     "SolarWinds")
@@ -331,11 +331,11 @@ $locations = @(
   "C:\Installers\"
 )
 foreach ($loc in $locations) {
-  Get-ChildItem $loc -Recurse -Filter "*SCVMM*"
+  Get-ChildItem $loc -Recurse -Filter "*Platform*"
 }
 
 # Attempt 3: Ask user for installer location
-# Escalate: "Cannot find SCVMM installer. Please provide download URL or network path."
+# Escalate: "Cannot find Platform installer. Please provide download URL or network path."
 ```
 
 #### Category 2: Installation Fails
@@ -348,7 +348,7 @@ foreach ($loc in $locations) {
 # Verify SQL Server running, Hyper-V installed
 
 # Attempt 2: Check logs
-Get-EventLog -LogName Application -Source MSSQL*,SCVMM* -Newest 10
+Get-EventLog -LogName Application -Source MSSQL*,Platform* -Newest 10
 
 # Common issues:
 # - Port conflict (SQL using 1433, already in use)
@@ -361,13 +361,13 @@ Get-EventLog -LogName Application -Source MSSQL*,SCVMM* -Newest 10
 
 #### Category 3: Partial Success (Degraded Environment)
 
-**Example**: SCVMM Server fails, but SCVMM Console installs
+**Example**: Platform Server fails, but Platform Console installs
 
 **Action**: Create degraded environment
 
 ```bash
-echo "SCVMM Server installation failed after 3 attempts"
-echo "Installing SCVMM Console (read-only functionality)"
+echo "Platform Server installation failed after 3 attempts"
+echo "Installing Platform Console (read-only functionality)"
 
 # Install Console only
 setup.exe /console /i /quiet
@@ -376,7 +376,7 @@ setup.exe /console /i /quiet
 Import-Module VirtualMachineManager
 Get-Command -Module VirtualMachineManager | Where-Object {$_.Name -like "Get-*"}
 
-echo "✅ SCVMM Console installed"
+echo "✅ Platform Console installed"
 echo "⚠️ DEGRADED ENVIRONMENT:"
 echo "  - Get-* cmdlets work (info gathering)"
 echo "  - New-*, Set-*, Remove-* cmdlets unavailable"
@@ -389,22 +389,22 @@ echo "  - Blocked modules: 7/15 (47%)"
 cat > docs/plans/blocked_modules.md <<EOF
 # Blocked Modules Manifest
 
-**Reason**: SCVMM Server installation failed (Console-only degraded environment)
+**Reason**: Platform Server installation failed (Console-only degraded environment)
 
 **Testable Modules** (8):
-- scvmm_info (Get-SCVMMServer)
-- scvmm_host_info (Get-SCVMHost)
-- scvmm_vm_info (Get-SCVM)
+- example_collection_info (Get-PlatformServer)
+- example_collection_host_info (Get-SCVMHost)
+- example_collection_vm_info (Get-SCVM)
 ... (all Get-* cmdlet modules)
 
 **Blocked Modules** (7):
-- scvmm_host (New-SCVMHost - requires SCVMM Server)
-- scvmm_vm (New-SCVM - requires SCVMM Server)
+- example_collection_host (New-SCVMHost - requires Platform Server)
+- example_collection_vm (New-SCVM - requires Platform Server)
 ... (all New-*/Set-* cmdlet modules)
 
 **Resume When Fixed**:
-1. Install SCVMM Server successfully
-2. Run: ansible-test integration scvmm_host --python 3.9
+1. Install Platform Server successfully
+2. Run: ansible-test integration example_collection_host --python 3.9
 3. Update backlog: [!] → [x]
 EOF
 ```
@@ -429,8 +429,8 @@ cat > docs/plans/prerequisite_installation_log.md <<EOF
 |-----------|--------|----------|----------|-------|
 | SQL Server | ✅ SUCCESS | 2 | 15 min | Express edition |
 | Hyper-V | ✅ SUCCESS | 1 | 5 min | Required reboot |
-| SCVMM Server | ❌ FAILED | 3 | 45 min | Database configuration issue |
-| SCVMM Console | ✅ SUCCESS | 1 | 10 min | Degraded environment |
+| Platform Server | ❌ FAILED | 3 | 45 min | Database configuration issue |
+| Platform Console | ✅ SUCCESS | 1 | 10 min | Degraded environment |
 
 **Overall Status**: DEGRADED (Console-only)
 
@@ -459,23 +459,23 @@ cat > docs/plans/prerequisite_installation_log.md <<EOF
 - Reboot: Required and completed
 - Duration: 5 min
 
-### SCVMM Server
+### Platform Server
 
 **Attempt 1**: Standard installation
 - Status: FAILED
 - Error: Cannot connect to SQL database
-- Logs: /var/log/scvmm_install_attempt1.log
+- Logs: /var/log/example_collection_install_attempt1.log
 - Duration: 20 min
 
 **Attempt 2**: Manual database creation
 - Status: FAILED
 - Error: SQL collation mismatch
-- Issue: SCVMM requires SQL_Latin1_General_CP1_CI_AS, found Latin1_General_CI_AS
+- Issue: Platform requires SQL_Latin1_General_CP1_CI_AS, found Latin1_General_CI_AS
 - Duration: 15 min
 
 **Attempt 3**: Console-only installation
 - Status: SUCCESS (degraded)
-- Installed: SCVMM Console
+- Installed: Platform Console
 - Limitations: Read-only cmdlets only
 - Duration: 10 min
 
@@ -486,10 +486,10 @@ cat > docs/plans/prerequisite_installation_log.md <<EOF
 **Installed Components**:
 - ✅ SQL Server Express 2019 (Instance: SQLEXPRESS)
 - ✅ Hyper-V Role
-- ✅ SCVMM Console 2022
+- ✅ Platform Console 2022
 
 **Missing Components**:
-- ❌ SCVMM Server (database configuration issue)
+- ❌ Platform Server (database configuration issue)
 
 **Degraded Environment Impact**:
 - Testable modules: 8/15 (53%)
@@ -497,15 +497,15 @@ cat > docs/plans/prerequisite_installation_log.md <<EOF
 
 **Recommended Actions**:
 1. Fix SQL Server collation (reinstall with correct collation)
-2. Retry SCVMM Server installation
+2. Retry Platform Server installation
 3. If successful, resume testing for blocked modules
 
 ---
 
 ## Lessons Learned
 
-1. **SQL Server collation** is critical for SCVMM installation
-   - Action: Add collation check before SCVMM install
+1. **SQL Server collation** is critical for Platform installation
+   - Action: Add collation check before Platform install
    - Learning: Captured in lessons_learned.md
 
 2. **Port conflicts** can block SQL Server
@@ -524,7 +524,7 @@ After 3 attempts exhausted:
 ```json
 {
   "status": "escalation",
-  "component": "SCVMM Server",
+  "component": "Platform Server",
   "attempts": 3,
   "errors": [
     "Attempt 1: Port 1433 in use",
@@ -539,18 +539,18 @@ After 3 attempts exhausted:
   "options": [
     {
       "option": "A",
-      "description": "Provide SCVMM installer with working SQL Server",
+      "description": "Provide Platform installer with working SQL Server",
       "action": "User provides resources, agent retries"
     },
     {
       "option": "B",
-      "description": "Skip SCVMM modules entirely",
+      "description": "Skip Platform modules entirely",
       "action": "Mark all modules as [SKIP], build different collection"
     },
     {
       "option": "C",
       "description": "Pause build, wait for manual installation",
-      "action": "User installs SCVMM manually, resumes build"
+      "action": "User installs Platform manually, resumes build"
     }
   ],
   "recommendation": "Option C - Pause for manual installation"
@@ -562,8 +562,8 @@ After 3 attempts exhausted:
 ```json
 {
   "status": "degraded_environment",
-  "installed": ["SQL Server Express", "Hyper-V", "SCVMM Console"],
-  "failed": ["SCVMM Server"],
+  "installed": ["SQL Server Express", "Hyper-V", "Platform Console"],
+  "failed": ["Platform Server"],
   "impact": {
     "total_modules": 15,
     "testable": 8,
@@ -590,9 +590,9 @@ After 3 attempts exhausted:
   "status": "success | degraded | failed",
   "environment": {
     "type": "full | degraded | none",
-    "installed_components": ["SQL Server", "Hyper-V", "SCVMM Console"],
-    "failed_components": ["SCVMM Server"],
-    "degradation_reason": "SCVMM Server installation failed"
+    "installed_components": ["SQL Server", "Hyper-V", "Platform Console"],
+    "failed_components": ["Platform Server"],
+    "degradation_reason": "Platform Server installation failed"
   },
   "module_impact": {
     "total": 15,

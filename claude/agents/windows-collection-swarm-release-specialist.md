@@ -255,7 +255,7 @@ After successful internal delivery (steps 1-6), push to external temporary repos
 ```
 agentic-workflow-collections/
 ├── microsoft/
-│   ├── scvmm/          # <namespace>/<name>
+│   ├── example_collection/          # <namespace>/<name>
 │   └── exchange/
 ├── company/
 │   └── customapp/

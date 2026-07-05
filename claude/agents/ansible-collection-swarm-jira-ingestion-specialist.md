@@ -60,7 +60,7 @@ For each Epic, determine these characteristics through intelligent analysis:
 **Question**: "What platform/system/application are we managing?"
 
 **Extract**:
-- Platform name (e.g., "SolarWinds Orion", "SCVMM", "Cisco IOS-XE")
+- Platform name (e.g., "SolarWinds Orion", "Platform", "Cisco IOS-XE")
 - Purpose (e.g., "network monitoring", "virtualization", "database")
 - Vendor/source (e.g., "Microsoft", "Cisco", "open-source")
 
@@ -168,7 +168,7 @@ Extract:
 **Categories**:
 
 **Software Installation** (on-premises platforms):
-- Server software (SCVMM, SQL Server, IIS)
+- Server software (Platform, SQL Server, IIS)
 - Agent software (monitoring agents, backup clients)
 - Custom applications (vendor-specific tools)
 
@@ -185,21 +185,21 @@ Extract:
 - Database instances
 
 **Infer dependencies**:
-- If "SCVMM" mentioned → Needs: SQL Server, Hyper-V (implicit)
+- If "Platform" mentioned → Needs: SQL Server, Hyper-V (implicit)
 - If "Azure" mentioned → Needs: Azure subscription, service principal
 - If "Cisco IOS" mentioned → Needs: Test switch or simulator (VIRL/CML)
 
 **Example**:
 ```
-Epic: "Automate SCVMM 2022 virtual machine management"
-Research: SCVMM requires SQL Server backend and Hyper-V role
+Epic: "Automate Platform 2022 virtual machine management"
+Research: Platform requires SQL Server backend and Hyper-V role
 Extract:
   prerequisites:
-    primary: "SCVMM 2022"
+    primary: "Platform 2022"
     dependencies:
-      - "SQL Server 2019+ (SCVMM backend)"
-      - "Hyper-V role (required by SCVMM)"
-      - "At least 1 Hyper-V host added to SCVMM"
+      - "SQL Server 2019+ (Platform backend)"
+      - "Hyper-V role (required by Platform)"
+      - "At least 1 Hyper-V host added to Platform"
 ```
 
 ### 6. How Do We Test It?
@@ -448,9 +448,9 @@ Action: Extract module requirements from THIS ticket only
 ```bash
 $ jira-rh issue WINOPS-1234
 Type: Task
-Summary: Create scvmm_vm module for VM management
+Summary: Create example_collection_vm module for VM management
 
-→ Process: Extract 1 module (scvmm_vm) from this task
+→ Process: Extract 1 module (example_collection_vm) from this task
 ```
 
 #### Case B: Epic
@@ -464,7 +464,7 @@ Action: Fetch Epic, then fetch all child tasks
 ```bash
 $ jira-rh issue WINOPS-5000
 Type: Epic
-Summary: Build SCVMM collection
+Summary: Build Platform collection
 Subtasks: WINOPS-5001, WINOPS-5002, WINOPS-5003
 
 → Process: Fetch all subtasks, extract modules from each
@@ -587,7 +587,7 @@ WebSearch({
 ### Step 5: Infer Dependencies AUTONOMOUSLY
 
 **Think like a human engineer** (internal analysis - no questions):
-- "SCVMM needs SQL Server" (even if Epic doesn't say it)
+- "Platform needs SQL Server" (even if Epic doesn't say it)
 - "Azure modules need subscription" (obvious from context)  
 - "Cisco modules need test switch" (implicit requirement)
 
@@ -648,7 +648,7 @@ modules:
 ```
 
 **Module Extraction Rules**:
-- Task title often contains module name (e.g., "Create scvmm_vm module" → module: scvmm_vm)
+- Task title often contains module name (e.g., "Create example_collection_vm module" → module: example_collection_vm)
 - Task description contains module functionality
 - Acceptance criteria define parameters and behavior
 - One task = One module (usually, but read the content to be sure)
@@ -676,8 +676,8 @@ platform_characteristics:
 ```yaml
 # BAD - Template-based
 platform: windows
-template: scvmm_prerequisites.yml
-install_script: install_scvmm.sh
+template: example_collection_prerequisites.yml
+install_script: install_example_collection.sh
 ```
 
 **YES**:
@@ -693,11 +693,11 @@ install_script: install_scvmm.sh
 **Automation Method**: PowerShell cmdlets (VirtualMachineManager module)
 
 **Module Language**: PowerShell
-- **Why**: SCVMM provides comprehensive PowerShell cmdlet library
+- **Why**: Platform provides comprehensive PowerShell cmdlet library
 - **File Extension**: .ps1
 
 **Connection Method**: winrm
-- **Why**: PowerShell cmdlets execute via WinRM on SCVMM server
+- **Why**: PowerShell cmdlets execute via WinRM on Platform server
 - **Default Port**: 5986 (HTTPS)
 
 **State Management Pattern**: Declarative
@@ -713,7 +713,7 @@ install_script: install_scvmm.sh
 
 **Why needed**: This is the platform we're managing (primary automation target)
 
-**Version**: SCVMM 2022 (or SCVMM 2019 if specified in Epic)
+**Version**: Platform 2022 (or Platform 2019 if specified in Epic)
 
 **Installation**:
 - Download: Microsoft Evaluation Center or Volume License portal
@@ -721,27 +721,27 @@ install_script: install_scvmm.sh
 - Silent install: `setup.exe /server /i /f install_config.ini`
 
 **Dependencies**:
-- SQL Server 2019+ (SCVMM uses SQL as backend database)
-- Hyper-V role (SCVMM requires Hyper-V on management server)
+- SQL Server 2019+ (Platform uses SQL as backend database)
+- Hyper-V role (Platform requires Hyper-V on management server)
 - .NET Framework 4.8
 
 ### SQL Server 2019
 
 **What it is**: Microsoft's relational database
 
-**Why needed**: SCVMM requires SQL Server for its database backend
+**Why needed**: Platform requires SQL Server for its database backend
 
 **Installation**: <steps>
 
 **Configuration**: 
-- Create SCVMM database during SCVMM setup
-- Collation: SQL_Latin1_General_CP1_CI_AS (SCVMM requirement)
+- Create Platform database during Platform setup
+- Collation: SQL_Latin1_General_CP1_CI_AS (Platform requirement)
 
 ### Hyper-V Role
 
 **What it is**: Windows Server virtualization role
 
-**Why needed**: SCVMM requires Hyper-V role installed
+**Why needed**: Platform requires Hyper-V role installed
 
 **Installation**:
 ```powershell
@@ -755,17 +755,17 @@ Install-WindowsFeature Hyper-V -IncludeManagementTools
 1. Install SQL Server first (dependency)
 2. Verify SQL collation is correct
 3. Install Hyper-V role (requires reboot)
-4. After reboot, install SCVMM
-5. SCVMM setup will create database in SQL
-6. Verify: Import-Module VirtualMachineManager; Get-SCVMMServer
+4. After reboot, install Platform
+5. Platform setup will create database in SQL
+6. Verify: Import-Module VirtualMachineManager; Get-PlatformServer
 
 **If installation fails**:
 - Attempt 1: Check SQL Server service running, verify collation
-- Attempt 2: Try SCVMM Console-only install (degraded environment)
-- Attempt 3: Use existing SCVMM server if available (ask user)
+- Attempt 2: Try Platform Console-only install (degraded environment)
+- Attempt 3: Use existing Platform server if available (ask user)
 
 **Degraded environment option**:
-- SCVMM Console (read-only cmdlets work)
+- Platform Console (read-only cmdlets work)
 - Limitations: Cannot use New-* or Set-* cmdlets
 - Impact: ~40% of modules testable (info-gathering modules only)
 ```

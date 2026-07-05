@@ -124,21 +124,184 @@ ansible_winrm_transport=ssl
 ansible_winrm_server_cert_validation=ignore
 ```
 
-### Step 2: Run Tests
+### Step 2: Run Tests (ONE MODULE AT A TIME - ISOLATED)
+
+**CRITICAL RULE**: Each module gets its OWN integration test directory with NO dependencies on other modules.
+
+**Test Structure** (MANDATORY):
+
+```
+tests/integration/targets/
+├── example_resource/           # ONE module ONLY
+│   ├── tasks/
+│   │   └── main.yml      # Tests ONLY example_resource
+│   └── meta/
+│       └── main.yml      # dependencies: [] (EMPTY)
+├── other_module/             # DIFFERENT module
+│   ├── tasks/
+│   │   └── main.yml      # Tests ONLY other_module
+│   └── meta/
+│       └── main.yml      # dependencies: [] (EMPTY)
+```
+
+**FORBIDDEN Patterns** (These create stupid cross-dependencies):
+
+❌ **BAD - All modules in one test**:
+```yaml
+# tests/integration/targets/all_modules/tasks/main.yml
+- name: Test example_resource
+  example_resource: ...
+- name: Test other_module
+  other_module: ...
+- name: Test another_module
+  another_module: ...
+```
+**WHY BAD**: If example_resource fails, ALL modules marked failed. Wastes time.
+
+---
+
+❌ **BAD - Dependencies between module tests**:
+```yaml
+# tests/integration/targets/other_module/meta/main.yml
+dependencies:
+  - example_resource  # ❌ NEVER DO THIS
+```
+**WHY BAD**: Can't test other_module until example_resource passes. Creates cascade failures.
+
+---
+
+❌ **BAD - Using other modules in test**:
+```yaml
+# tests/integration/targets/other_module/tasks/main.yml
+- name: Create host first
+  example_resource:  # ❌ Testing other_module, don't use example_resource
+    name: test-host
+    
+- name: Then create VM
+  other_module:
+    name: test-vm
+```
+**WHY BAD**: If example_resource is broken, other_module test fails. Misleading results.
+
+---
+
+**CORRECT Pattern** (Isolated, self-contained):
+
+✅ **GOOD - Each module standalone**:
+```yaml
+# tests/integration/targets/example_resource/tasks/main.yml
+---
+# Test example_resource module ONLY
+# Assumes: Clean Platform environment (no setup from other modules)
+
+- name: Stage 1 - Initial run (create)
+  example_resource:
+    name: "test-host-{{ 999999 | random }}"
+    computer_name: "testhost01.example_collection.local"
+    state: present
+  register: result
+
+- name: Verify created
+  assert:
+    that:
+      - result is changed
+      - result.host.name is defined
+
+- name: Stage 2 - Idempotency (no changes)
+  example_resource:
+    name: "{{ result.host.name }}"
+    computer_name: "testhost01.example_collection.local"
+    state: present
+  register: result_idempotent
+
+- name: Verify idempotent
+  assert:
+    that:
+      - result_idempotent is not changed
+
+- name: Stage 3 - Check mode (dry run)
+  example_resource:
+    name: "{{ result.host.name }}"
+    state: absent
+  check: true
+  register: result_check
+
+- name: Verify check mode
+  assert:
+    that:
+      - result_check is changed
+      - result_check.host.name is defined  # Still exists
+
+- name: Stage 4 - Error handling (invalid input)
+  example_resource:
+    name: ""  # Invalid
+    state: present
+  register: result_error
+  failed_when: false
+
+- name: Verify error message
+  assert:
+    that:
+      - result_error is failed
+      - "'name cannot be empty' in result_error.msg"
+
+- name: Cleanup - Remove test host
+  example_resource:
+    name: "{{ result.host.name }}"
+    state: absent
+```
+
+✅ **GOOD - meta/main.yml (NO dependencies)**:
+```yaml
+# tests/integration/targets/example_resource/meta/main.yml
+---
+dependencies: []  # ALWAYS EMPTY
+```
+
+---
+
+**Run Tests** (ONE module at a time):
 
 ```bash
-# Run integration tests for module
-ansible-test integration scvmm_host --python 3.9 --inventory tests/inventory.winrm
+# Test example_resource ONLY
+ansible-test integration example_resource --python 3.9 --inventory tests/inventory.winrm
 
-# Capture results
 if [ $? -eq 0 ]; then
-  echo "✅ scvmm_host PASSED"
-  mark_module_done "scvmm_host"
+  echo "✅ example_resource PASSED"
+  mark_module_done "example_resource"
 else
-  echo "❌ scvmm_host FAILED"
-  analyze_failure
+  echo "❌ example_resource FAILED"
+  analyze_failure "example_resource"
+  # DO NOT continue to next module until this passes
+fi
+
+# After example_resource passes, test other_module (separately)
+ansible-test integration other_module --python 3.9 --inventory tests/inventory.winrm
+
+if [ $? -eq 0 ]; then
+  echo "✅ other_module PASSED"
+  mark_module_done "other_module"
+else
+  echo "❌ other_module FAILED"
+  analyze_failure "other_module"
 fi
 ```
+
+---
+
+**Test Isolation Checklist** (MANDATORY):
+
+Before accepting ANY integration test:
+
+- [ ] **One module per target directory** - `targets/MODULE_NAME/` contains ONLY that module's tests
+- [ ] **No dependencies in meta/main.yml** - `dependencies: []` (always empty)
+- [ ] **No calls to other modules** - Test file uses ONLY the module being tested
+- [ ] **Self-contained setup** - Creates its own test resources, doesn't rely on other tests
+- [ ] **Cleans up after itself** - Removes test resources at end
+- [ ] **Random/unique names** - Uses `{{ 999999 | random }}` to avoid conflicts
+- [ ] **Can run standalone** - `ansible-test integration MODULE_NAME` works in isolation
+
+**If ANY check fails → REJECT the test, request rewrite**
 
 ### Step 3: Handle Failures
 
@@ -153,7 +316,7 @@ fi
 
 ```bash
 # Mark module complete
-sed -i 's/- \[ \] scvmm_host/- [x] scvmm_host/' docs/plans/module_backlog.md
+sed -i 's/- \[ \] example_resource/- [x] example_resource/' docs/plans/module_backlog.md
 ```
 
 ## Blocked Modules Tracking
@@ -165,14 +328,14 @@ sed -i 's/- \[ \] scvmm_host/- [x] scvmm_host/' docs/plans/module_backlog.md
 ```markdown
 # Blocked Modules
 
-**Reason**: SCVMM Server not installed (degraded environment)
+**Reason**: Platform Server not installed (degraded environment)
 
 **Blocked**:
-- scvmm_host - Requires New-SCVMHost cmdlet
-- scvmm_vm - Requires New-SCVM cmdlet
+- example_resource - Requires New-SCVMHost cmdlet
+- other_module - Requires New-SCVM cmdlet
 
 **Resume Command**:
-ansible-test integration scvmm_host --python 3.9
+ansible-test integration example_resource --python 3.9
 ```
 
 ## Pre-Test Quality Checklist (MANDATORY)
@@ -180,6 +343,17 @@ ansible-test integration scvmm_host --python 3.9
 **BEFORE running integration tests**, verify module follows universal quality standards:
 
 ### Universal Code Quality Checks
+
+- [ ] **Test Isolation**: Each module has standalone integration test
+  - Check: One module per `tests/integration/targets/MODULE_NAME/` directory
+  - Check: `meta/main.yml` has `dependencies: []` (empty)
+  - Check: Test file uses ONLY the module being tested (no other module calls)
+  - Check: Test can run standalone with `ansible-test integration MODULE_NAME`
+  - ❌ Bad: `all_modules` directory testing multiple modules
+  - ❌ Bad: `dependencies: [other_module]` in meta/main.yml
+  - ❌ Bad: Calling example_resource inside other_module test
+  - ✅ Good: Isolated test, self-contained, no cross-dependencies
+  - Action: Verify test structure follows isolation pattern
 
 - [ ] **No AI Hallucinations**: All features/APIs verified in official documentation
   - Check: No environment variables without doc link in comments

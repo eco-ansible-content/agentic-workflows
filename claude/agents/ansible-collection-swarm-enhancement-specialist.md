@@ -176,7 +176,7 @@ cat "plugins/modules/$SAMPLE_MODULE"
 ```markdown
 ## Existing Collection Analysis
 
-**Collection**: microsoft.scvmm
+**Collection**: microsoft.example_collection
 **Version**: 1.0.0
 **Existing Modules**: 15
 
@@ -184,7 +184,7 @@ cat "plugins/modules/$SAMPLE_MODULE"
 - Language: PowerShell (.ps1)
 - Connection: WinRM
 - Pattern: CLI-based (PowerShell cmdlets)
-- Naming: scvmm_<resource> (e.g., scvmm_host, scvmm_vm)
+- Naming: example_collection_<resource> (e.g., example_collection_host, example_collection_vm)
 - Module structure: AnsibleModule spec, Import VirtualMachineManager, Get-Compare-Set pattern
 - Documentation: Ansible standard (DOCUMENTATION, EXAMPLES, RETURN)
 - Tests: 4-stage loop in tests/integration/targets/<module>/
@@ -220,9 +220,9 @@ print(f"New to implement: {len(new_modules)}")
 
 **Example**:
 ```
-Existing modules: 15 (scvmm_host, scvmm_vm, scvmm_cloud, ...)
+Existing modules: 15 (example_collection_host, example_collection_vm, example_collection_cloud, ...)
 Epic requests: 18 modules
-New modules to add: 3 (scvmm_network, scvmm_template, scvmm_service_template)
+New modules to add: 3 (example_collection_network, example_collection_template, example_collection_service_template)
 ```
 
 ### Step 3: Match Existing Patterns
@@ -230,23 +230,23 @@ New modules to add: 3 (scvmm_network, scvmm_template, scvmm_service_template)
 **For each new module**:
 
 1. **Read similar existing module** to understand pattern
-2. **Match naming convention**: If existing uses `scvmm_*`, new module should too
+2. **Match naming convention**: If existing uses `example_collection_*`, new module should too
 3. **Match code structure**: Same parameter style, same error handling
 4. **Match documentation format**: Same DOCUMENTATION structure
 5. **Match test approach**: Same test stages
 
 **Example**:
 ```
-New module: scvmm_network
+New module: example_collection_network
 
-Similar existing module: scvmm_host (manages host resources)
+Similar existing module: example_collection_host (manages host resources)
 
 Pattern to follow:
-- File: plugins/modules/scvmm_network.ps1
+- File: plugins/modules/example_collection_network.ps1
 - Import: VirtualMachineManager module
 - Cmdlets: Get-SCVMNetwork, New-SCVMNetwork, Set-SCVMNetwork, Remove-SCVMNetwork
 - Structure: Spec → Import → Get current → Compare → Apply if needed
-- Tests: tests/integration/targets/scvmm_network/tasks/main.yml (4-stage)
+- Tests: tests/integration/targets/example_collection_network/tasks/main.yml (4-stage)
 ```
 
 ### Step 4: Implement New Modules
@@ -607,14 +607,14 @@ else
 fi
 
 # Add new modules
-git add plugins/modules/scvmm_network.ps1
-git add plugins/modules/scvmm_template.ps1
-git add plugins/modules/scvmm_service_template.ps1
+git add plugins/modules/example_collection_network.ps1
+git add plugins/modules/example_collection_template.ps1
+git add plugins/modules/example_collection_service_template.ps1
 
 # Add new tests
-git add tests/integration/targets/scvmm_network/
-git add tests/integration/targets/scvmm_template/
-git add tests/integration/targets/scvmm_service_template/
+git add tests/integration/targets/example_collection_network/
+git add tests/integration/targets/example_collection_template/
+git add tests/integration/targets/example_collection_service_template/
 
 # Add updated docs
 git add docs/plans/module_backlog.md
@@ -624,9 +624,9 @@ git add README.md
 git commit -m "Enhancement: Add 3 new modules from $EPIC_KEY
 
 Added modules:
-- scvmm_network: Manage SCVMM virtual networks
-- scvmm_template: Manage VM templates
-- scvmm_service_template: Manage service templates
+- example_collection_network: Manage Platform virtual networks
+- example_collection_template: Manage VM templates
+- example_collection_service_template: Manage service templates
 
 All new modules:
 - ✅ Follow existing patterns
@@ -703,13 +703,13 @@ fi
 
 ## Example Workflow: Enhancement
 
-**Scenario**: Existing microsoft.scvmm collection (15 modules), Epic adds 3 new modules
+**Scenario**: Existing microsoft.example_collection collection (15 modules), Epic adds 3 new modules
 
 **User invokes**:
 ```
 Agent({
   description: "Enhance collection",
-  prompt: "Add modules from EPIC-5678 to microsoft.scvmm collection"
+  prompt: "Add modules from EPIC-5678 to microsoft.example_collection collection"
 })
 ```
 
@@ -719,7 +719,7 @@ Agent({
 
 **Detection**: Lead Architect checks
 ```bash
-ls ~/agentic-workflow-collections/microsoft/scvmm/
+ls ~/agentic-workflow-collections/microsoft/example_collection/
 # Exists! Deploy Enhancement Specialist
 ```
 
@@ -727,15 +727,15 @@ ls ~/agentic-workflow-collections/microsoft/scvmm/
 
 1. **Analyze existing**:
    - 15 modules, PowerShell, CLI-based pattern
-   - Naming: `scvmm_*`
+   - Naming: `example_collection_*`
    - Pattern: Get-Compare-Set
 
 2. **Read Epic**:
-   - Requests: scvmm_network, scvmm_template, scvmm_service_template
+   - Requests: example_collection_network, example_collection_template, example_collection_service_template
    - All are NEW (not in existing 15)
 
 3. **Implement 3 new modules**:
-   - Copy pattern from scvmm_host (similar structure)
+   - Copy pattern from example_collection_host (similar structure)
    - Adapt for new resources
    - Match existing code style
 
@@ -758,7 +758,7 @@ ls ~/agentic-workflow-collections/microsoft/scvmm/
 
 **Result**:
 ```
-✅ Collection enhanced: microsoft.scvmm
+✅ Collection enhanced: microsoft.example_collection
 ✅ Modules: 15 → 18
 ✅ All tests passing (new + existing)
 ✅ Pushed to: https://github.com/myorg/collections.git
@@ -815,11 +815,11 @@ Collections may use different documentation formats. Before creating a new modul
 
 ### Case 1: Epic Requests Modification to Existing Module
 
-**Scenario**: Epic says "Update scvmm_host to support new parameter X"
+**Scenario**: Epic says "Update example_collection_host to support new parameter X"
 
 **Action**:
 1. Identify: This is UPDATE, not ADD
-2. Read existing scvmm_host module
+2. Read existing example_collection_host module
 3. Add new parameter while preserving existing behavior
 4. Add tests for new parameter
 5. Run regression tests to ensure backward compatibility
@@ -827,12 +827,12 @@ Collections may use different documentation formats. Before creating a new modul
 
 ### Case 2: Epic Requests Module Already Exists
 
-**Scenario**: Epic requests "scvmm_vm" but it already exists
+**Scenario**: Epic requests "example_collection_vm" but it already exists
 
 **Action**:
 1. Detect: Module exists in backlog
 2. Check if Epic wants enhancement vs rebuild
-3. Ask user: "Module scvmm_vm already exists. Enhance it or skip?"
+3. Ask user: "Module example_collection_vm already exists. Enhance it or skip?"
 4. If enhance: Apply updates
 5. If skip: Move to next module
 

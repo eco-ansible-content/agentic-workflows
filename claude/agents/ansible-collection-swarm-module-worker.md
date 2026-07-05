@@ -216,12 +216,12 @@ Create `docs/plans/research_findings_[module-name].md`:
 
 Read module specification:
 ```
-Module: scvmm_host
-Description: Manage Hyper-V hosts in SCVMM
+Module: example_resource
+Description: Manage resources in Platform
 ```
 
 Extract:
-- **Resource**: What are we managing? (Hyper-V host)
+- **Resource**: What are we managing? (resource)
 - **Operations**: What can we do? (add, remove, configure)
 - **State**: Desired state model? (present/absent)
 
@@ -252,7 +252,7 @@ Extract:
 | Config files | Config file pattern |
 | Database queries | Database pattern |
 
-For SCVMM example: **CLI-based pattern** (PowerShell variant)
+For Platform example: **CLI-based pattern** (PowerShell variant)
 
 ### Step 4: Research the API/Interface
 
@@ -400,7 +400,7 @@ config_path = "/etc/[package]"
 $spec = @{
     options = @{
         name = @{ type = "str"; required = $true }
-        vmm_server = @{ type = "str"; required = $true }
+        api_endpoint = @{ type = "str"; required = $true }
         state = @{ type = "str"; choices = "present", "absent"; default = "present" }
     }
     supports_check_mode = $true
@@ -409,14 +409,14 @@ $spec = @{
 $module = [Ansible.Basic.AnsibleModule]::Create($args, $spec)
 
 $name = $module.Params.name
-$vmm_server = $module.Params.vmm_server
+$api_endpoint = $module.Params.api_endpoint
 $state = $module.Params.state
 
 # Import required module
 Import-Module VirtualMachineManager
 
-# Connect to SCVMM
-$vmmConnection = Get-SCVMMServer -ComputerName $vmm_server
+# Connect to Platform
+$vmmConnection = Get-PlatformServer -ComputerName $api_endpoint
 
 # PATTERN: Check current state (GET)
 $currentHost = Get-SCVMHost -VMMServer $vmmConnection -ComputerName $name -ErrorAction SilentlyContinue
@@ -559,16 +559,79 @@ if __name__ == '__main__':
 
 ### Step 6: Implement Tests
 
+**CRITICAL ISOLATION RULE**: Each module gets its OWN integration test with ZERO dependencies on other modules.
+
+**Test Structure** (MANDATORY):
+
+```
+tests/integration/targets/
+└── <module_name>/           # ONE module ONLY
+    ├── tasks/
+    │   └── main.yml         # Tests ONLY this module
+    ├── meta/
+    │   └── main.yml         # dependencies: [] (ALWAYS EMPTY)
+    └── defaults/
+        └── main.yml         # Test variables (optional)
+```
+
+**FORBIDDEN Patterns**:
+
+❌ **NEVER create multi-module test directories**:
+```
+tests/integration/targets/
+└── all_modules/  # ❌ WRONG - tests multiple modules
+```
+
+❌ **NEVER add dependencies in meta/main.yml**:
+```yaml
+# meta/main.yml
+dependencies:
+  - other_module  # ❌ WRONG - creates coupling
+```
+
+❌ **NEVER call other modules in your test**:
+```yaml
+# tasks/main.yml for other_module test
+- name: Create host first
+  example_resource:  # ❌ WRONG - testing other_module, don't use example_resource
+    name: test-host
+```
+
+**Why**: If example_resource is broken, your other_module test fails. Misleading cascade failures.
+
+---
+
+**CORRECT Pattern** - Isolated, standalone test:
+
+**File 1**: `tests/integration/targets/<module_name>/meta/main.yml`
+```yaml
+---
+dependencies: []  # ALWAYS EMPTY - no dependencies on other modules
+```
+
+**File 2**: `tests/integration/targets/<module_name>/tasks/main.yml`
+
 Create 4-stage test (adapted to platform):
 
 ```yaml
-# tests/integration/targets/scvmm_host/tasks/main.yml
+# tests/integration/targets/example_resource/tasks/main.yml
 ---
-# Stage 1: Initial Run
-- name: Create Hyper-V host
-  scvmm_host:
-    name: "{{ test_host }}"
-    vmm_server: "{{ scvmm_server }}"
+# ISOLATION: This test is FULLY SELF-CONTAINED
+# - Uses ONLY example_resource module (the module being tested)
+# - No calls to other modules (other_module, another_module, etc.)
+# - Creates its own test resources
+# - Cleans up after itself
+# - Can run standalone: ansible-test integration example_resource
+
+# Stage 1: Initial Run (create resource)
+- name: Generate unique test name
+  set_fact:
+    test_host_name: "test-host-{{ 999999 | random }}"
+
+- name: Create resource
+  example_resource:
+    name: "{{ test_host_name }}"
+    api_endpoint: "{{ scapi_endpoint }}"
     state: present
   register: result
 
@@ -576,65 +639,86 @@ Create 4-stage test (adapted to platform):
   assert:
     that:
       - result is changed
-      - result.msg == "Host created"
+      - result.host is defined
+      - result.host.name == test_host_name
 
-# Stage 2: Idempotency
-- name: Create same host again (idempotent)
-  scvmm_host:
-    name: "{{ test_host }}"
-    vmm_server: "{{ scvmm_server }}"
+# Stage 2: Idempotency (no changes on repeat)
+- name: Run same operation again
+  example_resource:
+    name: "{{ test_host_name }}"
+    api_endpoint: "{{ scapi_endpoint }}"
     state: present
-  register: result
+  register: result_idempotent
 
 - name: Verify no change on second run
   assert:
     that:
-      - result is not changed
-      - result.msg == "Host already in desired state"
+      - result_idempotent is not changed
+      - result_idempotent.host.name == test_host_name
 
-# Stage 3: Check Mode
-- name: Test check mode
-  scvmm_host:
-    name: "{{ test_host_2 }}"
-    vmm_server: "{{ scvmm_server }}"
-    state: present
-  check_mode: yes
-  register: result
-
-- name: Verify check mode reports change
-  assert:
-    that:
-      - result is changed
-
-- name: Verify host was NOT actually created
-  scvmm_host_info:
-    name: "{{ test_host_2 }}"
-    vmm_server: "{{ scvmm_server }}"
-  register: info
-  failed_when: info.exists == true
-
-# Stage 4: Error Handling
-- name: Test invalid parameters
-  scvmm_host:
-    name: ""
-    vmm_server: "{{ scvmm_server }}"
-    state: present
-  register: result
-  ignore_errors: yes
-
-- name: Verify error message
-  assert:
-    that:
-      - result is failed
-      - "'name cannot be empty' in result.msg"
-
-# Cleanup
-- name: Remove test host
-  scvmm_host:
-    name: "{{ test_host }}"
-    vmm_server: "{{ scvmm_server }}"
+# Stage 3: Check Mode (dry-run, no actual changes)
+- name: Test check mode (dry-run deletion)
+  example_resource:
+    name: "{{ test_host_name }}"
+    api_endpoint: "{{ scapi_endpoint }}"
     state: absent
+  check: true
+  register: result_check
+
+- name: Verify check mode reports it would change
+  assert:
+    that:
+      - result_check is changed
+
+- name: Verify host still exists (check mode didn't actually delete)
+  example_resource:
+    name: "{{ test_host_name }}"
+    api_endpoint: "{{ scapi_endpoint }}"
+    state: present
+  register: verify_still_exists
+  
+- name: Confirm resource still present
+  assert:
+    that:
+      - verify_still_exists is not changed  # Still exists, no creation needed
+
+# Stage 4: Error Handling (invalid input produces clear error)
+- name: Test invalid parameters
+  example_resource:
+    name: ""  # Empty name - should fail
+    api_endpoint: "{{ scapi_endpoint }}"
+    state: present
+  register: result_error
+  failed_when: false  # Don't fail the test on expected failure
+
+- name: Verify error message is clear
+  assert:
+    that:
+      - result_error is failed
+      - result_error.msg is defined
+      - "'name' in result_error.msg or 'empty' in result_error.msg"
+
+# Cleanup (ALWAYS runs - critical for test isolation)
+- name: Remove test host (cleanup)
+  example_resource:
+    name: "{{ test_host_name }}"
+    api_endpoint: "{{ scapi_endpoint }}"
+    state: absent
+  register: cleanup
+  
+- name: Verify cleanup succeeded
+  assert:
+    that:
+      - cleanup is changed or cleanup is not changed  # Either deleted or already gone
 ```
+
+**Test Isolation Checklist**:
+- ✅ Uses ONLY example_resource module (no other modules called)
+- ✅ `meta/main.yml` has `dependencies: []`
+- ✅ Random unique names (`{{ 999999 | random }}`)
+- ✅ Cleans up test resources at end
+- ✅ Self-contained (can run standalone)
+- ✅ No assumptions about other tests running first
 
 ### Step 7: Documentation
 
@@ -643,19 +727,19 @@ Add proper Ansible documentation:
 ```python
 DOCUMENTATION = r'''
 ---
-module: scvmm_host
-short_description: Manage Hyper-V hosts in SCVMM
+module: example_resource
+short_description: Manage resources in Platform
 description:
-  - Add, remove, or configure Hyper-V hosts in System Center Virtual Machine Manager
-  - Requires SCVMM PowerShell module
+  - Add, remove, or configure resources in System Center Virtual Machine Manager
+  - Requires Platform PowerShell module
 version_added: "1.0.0"
 options:
   name:
-    description: Hostname or FQDN of Hyper-V host
+    description: Hostname or FQDN of resource
     required: true
     type: str
-  vmm_server:
-    description: SCVMM server to connect to
+  api_endpoint:
+    description: Platform server to connect to
     required: true
     type: str
   state:
@@ -667,23 +751,23 @@ author:
   - Generated by Jarvis Universal Ansible Collection Swarm
 requirements:
   - PowerShell module VirtualMachineManager
-  - SCVMM 2019 or later
+  - Platform 2019 or later
 notes:
-  - Requires WinRM connection to SCVMM server
+  - Requires WinRM connection to Platform server
   - Check mode supported
 '''
 
 EXAMPLES = r'''
-- name: Add Hyper-V host to SCVMM
-  scvmm_host:
+- name: Add resource to Platform
+  example_resource:
     name: hyperv01.domain.com
-    vmm_server: scvmm.domain.com
+    api_endpoint: example_collection.domain.com
     state: present
 
-- name: Remove host from SCVMM
-  scvmm_host:
+- name: Remove host from Platform
+  example_resource:
     name: hyperv01.domain.com
-    vmm_server: scvmm.domain.com
+    api_endpoint: example_collection.domain.com
     state: absent
 '''
 

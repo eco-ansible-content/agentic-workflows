@@ -20,7 +20,7 @@ Your output is **platform-agnostic** - the same structure works for Windows, Azu
 
 Receive from Lead Architect:
 - **Namespace**: Collection namespace (e.g., "microsoft", "cisco", "company")
-- **Name**: Collection name (e.g., "scvmm", "ios", "customapp")
+- **Name**: Collection name (e.g., "example_collection", "ios", "customapp")
 - **Epic Key**: For documentation reference
 
 ## Output
@@ -492,9 +492,9 @@ Return to Lead Architect:
 
 ## Example Output
 
-**For SCVMM collection**:
+**For Platform collection**:
 ```
-Created: ~/agentic-workflow-collections/microsoft/scvmm/
+Created: ~/agentic-workflow-collections/microsoft/example_collection/
 Files: 10
 Modules expected: 15
 Platform: System Center Virtual Machine Manager 2022
