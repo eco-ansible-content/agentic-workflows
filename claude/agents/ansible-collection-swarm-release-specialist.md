@@ -87,12 +87,9 @@ git reset HEAD galaxy.yml 2>/dev/null || true
 git reset HEAD CHANGELOG.rst 2>/dev/null || true
 git reset HEAD changelogs/changelog.yaml 2>/dev/null || true
 
-# Verify changelog fragments exist (required)
-if [ ! -d "changelogs/fragments" ] || [ -z "$(ls -A changelogs/fragments/*.yml 2>/dev/null)" ]; then
-  echo "❌ ERROR: No changelog fragments found!"
-  echo "   Every module MUST have a changelog fragment in changelogs/fragments/"
-  exit 1
-fi
+# Full-build modules are NEW — do NOT require changelog fragments (PR #905).
+# Fragments are only for enhancements/bugfixes to existing modules.
+# If any enhancement fragments were staged, keep them; otherwise proceed without.
 
 # Commit with quality message
 git commit -m "Complete Ansible collection: <namespace>.<name>
@@ -149,19 +146,19 @@ fi
    - ❌ NEVER modify `CHANGELOG.rst` (generated artifact)
    - 🔒 Maintainer controls release process
 
-3. **Changelog Fragments - ALWAYS REQUIRED**:
-   - ✅ ALWAYS create changelog fragment for EVERY new module
-   - ✅ ALWAYS create changelog fragment for EVERY enhancement to existing module
-   - ✅ ALWAYS create changelog fragment for EVERY bugfix
+3. **Changelog Fragments - ENHANCEMENTS/BUGFIXES ONLY**:
+   - ❌ Do NOT create changelog fragments for NEW modules (tooling auto-generates)
+   - ✅ Create changelog fragment for EVERY enhancement to an existing module
+   - ✅ Create changelog fragment for EVERY bugfix to an existing module
    - 📝 Format: `changelogs/fragments/<epic-key>-<module-name>.yml`
 
 **What You MUST Do**:
-- ✅ Create changelog fragments (fragments/*.yml)
-- ✅ Commit code changes, tests, and fragments
+- ✅ Create changelog fragments (fragments/*.yml) only for enhanced/bugfixed existing modules
+- ✅ Commit code changes, tests, and (when applicable) fragments
 - ✅ Let maintainers control versioning and release generation
 
 **Learned from**: 
-- PR #905 review - maintainer requested removal of version bump and changelog generation
+- PR #905 review - skip fragments for new modules; no version bump or changelog generation
 - PR #907 issue - version bump included when it shouldn't have been
 
 ### Git Operations (Collaborative)
@@ -177,34 +174,58 @@ git pull origin main
 BRANCH_NAME="add-modules-$(echo <EPIC-KEY> | tr '[:upper:]' '[:lower:]')"
 git checkout -b "$BRANCH_NAME"
 
-# 3. Create changelog fragments (REQUIRED for EVERY module)
+# 3. Create changelog fragments (enhancements/bugfixes only)
 # This must happen BEFORE staging
 echo "📝 Creating changelog fragments..."
 
-# Read module list from backlog or detect from plugins/modules/
-MODULES=$(ls -1 plugins/modules/*.py 2>/dev/null | xargs -n1 basename | sed 's/\.py$//' | grep -v "^__")
+# Prefer backlog lists when available
+if [ -f /tmp/enhanced_modules.txt ]; then
+  ENHANCED_LIST=$(cat /tmp/enhanced_modules.txt)
+else
+  ENHANCED_LIST=""
+fi
+
+# Collect module basenames from .py, .ps1, and .yml module files
+MODULES=$(
+  { ls -1 plugins/modules/*.py plugins/modules/*.ps1 plugins/modules/*.yml 2>/dev/null || true; } \
+    | xargs -n1 basename 2>/dev/null \
+    | sed -E 's/\.(py|ps1|yml)$//' \
+    | grep -v '^__' \
+    | sort -u
+)
 
 for module in $MODULES; do
   FRAGMENT_FILE="changelogs/fragments/<EPIC-KEY>-${module}.yml"
-  
-  # Check if fragment already exists
-  if [ ! -f "$FRAGMENT_FILE" ]; then
-    # Determine fragment type (new module vs enhancement)
-    if git log --all --oneline -- "plugins/modules/${module}.py" 2>/dev/null | grep -q .; then
-      FRAGMENT_TYPE="minor_changes"  # Enhancement to existing module
-      FRAGMENT_DESC="Enhanced ${module} module with additional functionality"
-    else
-      FRAGMENT_TYPE="minor_changes"  # New module (use minor_changes, not major_changes)
-      FRAGMENT_DESC="Added ${module} module for <describe purpose>"
+
+  # Prefer backlog: only create for enhancement status
+  if [ -n "$ENHANCED_LIST" ]; then
+    echo "$ENHANCED_LIST" | grep -qw "$module" || {
+      echo "   ⏭️  Skip fragment (new module): $module"
+      continue
+    }
+  else
+    # Fallback: existing if git history exists for any module extension
+    IS_EXISTING=false
+    for ext in py ps1 yml; do
+      if git log --all --oneline -- "plugins/modules/${module}.${ext}" 2>/dev/null | grep -q .; then
+        IS_EXISTING=true
+        break
+      fi
+    done
+    if [ "$IS_EXISTING" != "true" ]; then
+      echo "   ⏭️  Skip fragment (new module): $module"
+      continue
     fi
-    
-    # Create fragment file
+  fi
+
+  if [ ! -f "$FRAGMENT_FILE" ]; then
+    FRAGMENT_TYPE="minor_changes"
+    FRAGMENT_DESC="Enhanced ${module} module with additional functionality"
     cat > "$FRAGMENT_FILE" <<EOF
 ---
 $FRAGMENT_TYPE:
   - $FRAGMENT_DESC
 EOF
-    
     echo "   ✅ Created: $FRAGMENT_FILE"
   else
     echo "   ⏭️  Fragment already exists: $FRAGMENT_FILE"
@@ -214,7 +235,8 @@ done
 # 4. Stage changes (code, tests, and fragments - NO planning docs, NO version files)
 git add plugins/modules/*.py plugins/modules/*.ps1 plugins/modules/*.yml
 git add tests/integration/targets/*/
-git add changelogs/fragments/*.yml  # ALWAYS include fragments
+git add tests/unit/
+git add changelogs/fragments/*.yml
 
 # Verify NO planning docs are staged
 git reset HEAD docs/plans/ 2>/dev/null || true
@@ -224,14 +246,18 @@ git reset HEAD galaxy.yml 2>/dev/null || true
 git reset HEAD CHANGELOG.rst 2>/dev/null || true  
 git reset HEAD changelogs/changelog.yaml 2>/dev/null || true
 
-# Verify fragments were staged
+# Fragments required ONLY when enhanced/bugfix modules are in scope
 FRAGMENT_COUNT=$(git diff --cached --name-only | grep "^changelogs/fragments/" | wc -l | tr -d ' ')
-if [ "$FRAGMENT_COUNT" -eq 0 ]; then
-  echo "❌ ERROR: No changelog fragments staged!"
-  echo "   Every module change MUST include a changelog fragment"
-  exit 1
+if [ -n "$ENHANCED_LIST" ] && [ -n "$(echo $ENHANCED_LIST | tr -d '[:space:]')" ]; then
+  if [ "$FRAGMENT_COUNT" -eq 0 ]; then
+    echo "❌ ERROR: Enhanced/bugfix modules present but no changelog fragments staged!"
+    echo "   Create fragments only for enhanced/bugfixed existing modules"
+    exit 1
+  fi
+  echo "✅ Changelog fragments staged: $FRAGMENT_COUNT"
+else
+  echo "ℹ️  No enhanced modules in scope — fragments not required (new modules only)"
 fi
-echo "✅ Changelog fragments staged: $FRAGMENT_COUNT"
 
 # Verify .gitignore excludes planning artifacts
 if ! grep -q "^docs/plans/" .gitignore 2>/dev/null; then

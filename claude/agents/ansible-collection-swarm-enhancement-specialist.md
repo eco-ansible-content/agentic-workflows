@@ -110,7 +110,8 @@ echo "   Enhanced modules: $ENHANCED_MODULES"
 ```
 
 **Changelog Fragment Rules** (CRITICAL):
-- ✅ **ALL modules**: Create changelog fragment in `changelogs/fragments/` for EVERY module (new or enhanced)
+- ❌ **NEW modules**: Do NOT create a changelog fragment (release tooling auto-generates entries for new modules)
+- ✅ **ENHANCED modules / bugfixes**: Create changelog fragment in `changelogs/fragments/`
 - ❌ **NEVER modify**: `changelogs/changelog.yaml` (maintainer updates during release)
 - ❌ **NEVER modify**: `CHANGELOG.rst` (maintainer updates during release)
 - ❌ **NEVER modify**: `galaxy.yml` version (maintainer controls versioning)
@@ -124,7 +125,7 @@ echo "$ENHANCED_MODULES" > /tmp/enhanced_modules.txt
 echo "$NEW_MODULES" > /tmp/new_modules.txt
 ```
 
-**Updated rule**: PR #907 showed that release-specialist needs fragments for ALL modules to properly validate deliverables.
+**Learned from**: PR #905 — maintainer: "No need to add changelog for new module; tooling does it automatically."
 
 ---
 
@@ -263,6 +264,7 @@ Pattern to follow:
 5. **Match documentation markup** - Use collection's semantic markup (V/O/C)
 6. **Preserve version** - Don't change galaxy.yml version (user decides)
 7. **No breaking changes** - Don't modify existing modules
+8. **Python unit tests** - If language is Python, create `tests/unit/plugins/modules/test_<module>.py` for every new/changed module (same rules as module-worker; ask user with risk before skipping)
 
 ### Documentation Markup (CRITICAL)
 
@@ -366,7 +368,50 @@ ls -1 plugins/modules/win_*.ps1 | grep -E "(win_winget|win_package_management)" 
 
 ---
 
-#### ACTION 3: Execute Integration Tests (WITH FIX-RETRY LOOP)
+#### ACTION 3a: Execute Unit Tests for Python Modules (WITH FIX-RETRY LOOP)
+
+**WHEN**: Collection has Python modules (`.py`). Skip this action for PowerShell (`.ps1`) modules — unit tests are not required for PowerShell.
+
+**FOR EACH new Python module**, verify unit tests exist, then execute and handle results:
+
+```bash
+# 1. Verify unit test file exists
+test -f tests/unit/plugins/modules/test_<module_name>.py
+
+# 2. Run unit tests for this module
+ansible-test units --python 3.9 -- tests/unit/plugins/modules/test_<module_name>.py
+```
+
+**Example for example_resource**:
+```bash
+test -f tests/unit/plugins/modules/test_example_resource.py
+ansible-test units --python 3.9 -- tests/unit/plugins/modules/test_example_resource.py
+```
+
+**RESPONSE HANDLING**:
+
+**IF unit test file is MISSING**:
+- Log: "❌ <module_name> missing unit tests (expected tests/unit/plugins/modules/test_<module_name>.py)"
+
+**IF test PASSES** (exit code 0):
+- Log: "✅ <module_name> unit tests PASSED"
+- Save test output to `/tmp/<module>_unit_success.log`
+- Move to next module
+
+**IF test FAILS** (exit code != 0):
+- Log: "❌ <module_name> unit tests FAILED"
+- Save complete error output to `/tmp/<module>_unit_failure.log`
+- **ANALYZE THE ERROR OUTPUT** (read the log file)
+- **IDENTIFY THE ROOT CAUSE** (what specifically failed?)
+- **FIX THE UNIT TEST OR MODULE** (edit `tests/unit/plugins/modules/test_<module>.py` and/or `plugins/modules/<module>.py`)
+- **RETRY THE TEST** (max 3 attempts)
+- **IF still failing after 3 attempts** → Report failure and STOP (or ask user with risk if mocks are incomplete)
+
+**CRITICAL**: You MUST actually execute these commands. Reading this instruction and saying "I would run unit tests" is NOT sufficient. Execute the Bash tool with these exact commands.
+
+---
+
+#### ACTION 3b: Execute Integration Tests (WITH FIX-RETRY LOOP)
 
 **FOR EACH new module**, execute the following test command and handle results:
 
@@ -921,7 +966,7 @@ Use #AnsibleRequires not #Requires, import Ansible.Basic not Ansible.ModuleUtils
 *Source: Team insight from Hen Yaish*
 
 ### Pattern: Changelog-Fragment-Format
-Use changelogs/fragments/<epic>-<module>.yml format for all module changes (new or enhanced)
+Use changelogs/fragments/<epic>-<module>.yml for enhancements and bugfixes to existing modules only; skip fragments for newly created modules (tooling auto-generates)
 
 *Source: Team insight from Hen Yaish*
 

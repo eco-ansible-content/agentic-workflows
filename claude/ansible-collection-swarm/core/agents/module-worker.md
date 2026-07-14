@@ -559,6 +559,23 @@ if __name__ == '__main__':
 
 ### Step 6: Implement Tests
 
+**Language-aware testing (MANDATORY)**:
+
+| Module language | Required tests |
+|-----------------|----------------|
+| **Python** (`.py`) | Unit tests **and** 4-stage integration tests |
+| **PowerShell** (`.ps1`) | 4-stage integration tests only (no unit-test mandate) |
+
+#### Python unit tests (ALWAYS REQUIRED for `.py` modules)
+
+Read `knowledge/patterns/python-unit-test-pattern.md` before writing unit tests.
+
+1. Create `tests/unit/plugins/modules/test_<module_name>.py`
+2. Mock external deps (HTTP, SDKs, subprocess) — do not call live systems in unit tests
+3. Cover: argument validation, happy path, idempotency decision, error paths
+
+#### Integration tests (all languages)
+
 **CRITICAL ISOLATION RULE**: Each module gets its OWN integration test with ZERO dependencies on other modules.
 
 **Test Structure** (MANDATORY):
@@ -574,6 +591,9 @@ tests/integration/targets/
     │   └── main.yml         # dependencies: [] (ALWAYS EMPTY)
     └── defaults/
         └── main.yml         # Default variables (optional)
+
+tests/unit/plugins/modules/   # Python modules only
+└── test_<module_name>.py
 ```
 
 **Also ensure `tests/unit/.gitkeep` exists** — ansible-test fails without the `tests/unit/` directory:
@@ -860,8 +880,9 @@ Based on characteristics from `prerequisites.md`:
 Create in collection workspace:
 
 1. **Module file**: `plugins/modules/<module_name>.<ext>`
-2. **Test file**: `tests/integration/targets/<module_name>/tasks/main.yml`
+2. **Integration test**: `tests/integration/targets/<module_name>/tasks/main.yml`
 3. **Test vars**: `tests/integration/targets/<module_name>/defaults/main.yml`
+4. **Unit test** (Python modules only): `tests/unit/plugins/modules/test_<module_name>.py`
 
 ## Success Criteria
 
@@ -870,7 +891,8 @@ Create in collection workspace:
 - ✅ Check mode supported
 - ✅ Error handling implemented
 - ✅ Documentation complete (DOCUMENTATION, EXAMPLES, RETURN)
-- ✅ Tests created (4-stage loop)
+- ✅ Integration tests created (4-stage loop)
+- ✅ Unit tests created for every Python module (unless user approved a documented risk exception)
 - ✅ Syntax validated
 
 ## Verification
@@ -881,6 +903,9 @@ ansible-test sanity <module_name> --python 3.9
 
 # Documentation check
 ansible-doc -t module <namespace>.<name>.<module_name>
+
+# Unit tests (Python modules — MANDATORY)
+ansible-test units --python 3.9
 
 # Integration test (dry run)
 ansible-test integration <module_name> --python 3.9 --check
