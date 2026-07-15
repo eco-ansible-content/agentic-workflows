@@ -217,3 +217,43 @@ If any resource is missing, report immediately - the swarm is incomplete.
 - Do NOT skip the 4-stage testing loop
 - Do NOT hardcode credentials or secrets
 - Do NOT rely on external skills or documentation
+
+## PR Review Learnings (CRITICAL)
+
+### RULE: Complementary Test Pattern — Action + Info Modules
+
+Action module tests MUST use the corresponding info module to verify state changes. Info module tests MUST use the corresponding action module to set up test data. This is the ONLY acceptable cross-module dependency.
+
+*Source: PR review*
+
+### RULE: No Runner Playbook
+
+Never combine multiple module tests into a single runner playbook. Each module test runs independently via `ansible-test integration <module_name>`.
+
+*Source: PR review learning*
+
+### RULE: Integration Test Must Be Playbook Format
+
+Each `main.yml` must include `hosts:`, `vars_files:`, and `tasks:` — it must be a complete playbook, not a bare task list.
+
+```yaml
+# ✅ CORRECT
+---
+- hosts: windows
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Test module
+      ...
+```
+
+*Source: PR review learning*
+
+### RULE: Always Include tests/unit/.gitkeep
+
+ansible-test fails without the `tests/unit/` directory. Always create it:
+```bash
+mkdir -p tests/unit && touch tests/unit/.gitkeep
+```
+
+*Source: PR review learning*

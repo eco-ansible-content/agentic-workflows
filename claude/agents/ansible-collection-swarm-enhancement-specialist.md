@@ -594,14 +594,17 @@ echo "✅ Code is fully synced with origin/main"
 DELIVERY_MODE=$(grep "delivery_mode:" docs/plans/project_context.yml | awk '{print $2}')
 
 if [ "$DELIVERY_MODE" = "fork_pr" ]; then
-  # Enhancement mode with fork workflow: create feature branch
+  # 🚨 CRITICAL: Branch MUST be fresh from origin/main
+  # NEVER branch off another feature branch (causes dirty branches with other PRs' files)
+  git checkout main && git pull origin main
   git checkout -b add-modules-$EPIC_KEY
   echo "✅ Created feature branch: add-modules-$EPIC_KEY (based on latest origin/main)"
 elif [ "$DELIVERY_MODE" = "local_only" ]; then
   # Local-only mode: work directly on current branch (main)
   echo "ℹ️  Working on main branch (local_only mode)"
 else
-  # Fallback: create branch for safety
+  # Fallback: create branch from main for safety
+  git checkout main && git pull origin main
   git checkout -b add-modules-$EPIC_KEY
   echo "⚠️  Unknown delivery mode, created feature branch for safety"
 fi
@@ -634,8 +637,7 @@ All new modules:
 - ✅ Regression tests pass (existing modules unaffected)
 
 Epic: $EPIC_KEY
-Modules: 15 → 18
-Version: 1.0.0 → 1.1.0 (suggested)"
+Modules: 15 → 18"
 ```
 
 **Delivery**:
@@ -927,3 +929,31 @@ Use changelogs/fragments/<epic>-<module>.yml format for all module changes (new 
 Ansible required_if cannot handle complex conditional validation; use manual validation with preserved error messages for backward compatibility
 
 *Source: Team insight from Hen Yaish*
+
+### RULE: Clean Branches — Never Stack Feature Branches
+
+Each PR branch MUST be created fresh from `origin/main`. NEVER branch off another feature branch — this causes "dirty branches" where PRs contain other PRs' files.
+
+```bash
+# ✅ CORRECT: Each branch fresh from main
+git checkout main && git pull origin main
+git checkout -b add-module-cloud
+
+# ❌ WRONG: Branch off another feature branch
+git checkout add-module-vm
+git checkout -b add-module-cloud  # Carries vm files!
+```
+
+*Source: PR review — "this is a mess, each PR should not contain other PR's files"*
+
+### RULE: Never Include Claude Code Attribution
+
+Never add "Generated with Claude Code" or "Co-Authored-By: Claude" to PR descriptions or commit messages. This is unprofessional.
+
+*Source: PR review*
+
+### RULE: Never Push Without Passing Integration Tests
+
+NEVER push code or create PRs if integration tests have not passed. If the test server is unreachable, WAIT for it. Do not push untested code.
+
+*Source: PR review — code was pushed while test server was unreachable*

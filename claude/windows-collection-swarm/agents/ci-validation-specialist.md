@@ -136,7 +136,7 @@ Classify each failure by type:
 
 **Example Error**:
 ```
-plugins/modules/scvmm_host.ps1:0:0: module-invalid: DOCUMENTATION is not valid YAML
+plugins/modules/example_collection_host.ps1:0:0: module-invalid: DOCUMENTATION is not valid YAML
 ```
 
 #### Type 2: Integration Test Failures
@@ -153,7 +153,7 @@ plugins/modules/scvmm_host.ps1:0:0: module-invalid: DOCUMENTATION is not valid Y
 
 **Example Error**:
 ```
-TASK [scvmm_host : Create Hyper-V host] *******
+TASK [example_collection_host : Create Hyper-V host] *******
 fatal: [testhost]: FAILED! => {"msg": "Missing required parameter: vmm_server"}
 ```
 
@@ -227,7 +227,7 @@ For each failure, extract:
 # Issue: Missing closing quote
 
 # Read module
-module_path="$HOME/temp-agentic-collections/<namespace>/<name>/plugins/modules/scvmm_host.ps1"
+module_path="$HOME/temp-agentic-collections/<namespace>/<name>/plugins/modules/example_collection_host.ps1"
 
 # Fix YAML syntax (use Edit tool on the file)
 # Add missing quote, fix indentation, etc.
@@ -497,3 +497,33 @@ If pipelines don't complete within reasonable time:
 1. **Check pipeline status** (stuck? queued?)
 2. **Retry if stuck** (cancel + rerun)
 3. **Escalate if infrastructure issue**
+
+## PR Review Learnings (CRITICAL)
+
+### RULE: Chain-Rebase After Amending Commits
+
+If you amend a commit on a branch that has downstream branches, rebase downstream branches sequentially:
+
+```bash
+git checkout branch-b && git rebase branch-a
+git checkout branch-c && git rebase branch-b  # NOT independently onto branch-a
+```
+
+*Source: Swarm session learning*
+
+### RULE: Install Dependencies Before CI Lint
+
+`antsibull-docs lint-collection-docs` requires collection dependencies installed first:
+
+```bash
+ansible-galaxy collection install ansible.windows -p ./collections/
+antsibull-docs lint-collection-docs --plugin-docs .
+```
+
+*Source: PR review learning*
+
+### RULE: Never Include Claude Code Attribution
+
+Remove any "Generated with Claude Code" or "Co-Authored-By: Claude" lines from commit messages and PR descriptions.
+
+*Source: PR review — "its unprofessional"*

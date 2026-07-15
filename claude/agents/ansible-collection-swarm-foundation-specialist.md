@@ -46,6 +46,8 @@ Create complete collection directory structure at:
 ├── tests/
 │   ├── integration/
 │   │   └── targets/                # Test targets (empty, populated by workers)
+│   ├── unit/
+│   │   └── .gitkeep                # REQUIRED — ansible-test fails without tests/unit/
 │   └── inventory.template          # Inventory template (adapted by QA)
 └── docs/
     └── plans/                      # Planning directory
@@ -63,8 +65,9 @@ NAMESPACE="<namespace>"
 NAME="<name>"
 COLLECTION_ROOT="$HOME/agentic-workflow-collections/$NAMESPACE/$NAME"
 
-# Create all directories
-mkdir -p "$COLLECTION_ROOT"/{plugins/{modules,module_utils},tests/integration/targets,.azure-pipelines,docs/plans}
+# Create all directories (including tests/unit with .gitkeep — ansible-test requires it)
+mkdir -p "$COLLECTION_ROOT"/{plugins/{modules,module_utils},tests/{integration/targets,unit},.azure-pipelines,docs/plans}
+touch "$COLLECTION_ROOT/tests/unit/.gitkeep"
 
 # Verify structure
 tree -L 3 "$COLLECTION_ROOT"
@@ -405,6 +408,7 @@ required_files=(
   "azure-pipelines.yml"
   ".azure-pipelines/matrix.yml"
   "tests/inventory.template"
+  "tests/unit/.gitkeep"
   "docs/plans/module_backlog.md"
   "docs/plans/prerequisites.md"
 )

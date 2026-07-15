@@ -296,3 +296,61 @@ foreach ($module in $blockedModules) {
 }
 ```
 
+## PR Review Learnings (CRITICAL)
+
+### RULE: Complementary Test Pattern — Action + Info Modules Must Cross-Validate
+
+Action module integration tests MUST use the corresponding info module to query and validate data after state changes. Info module integration tests MUST use the corresponding action module to create the testing environment to query from.
+
+```yaml
+# Action module test: verify creation via info module
+- name: Create resource
+  <namespace>.<collection>.<module_name>:
+    name: "test-resource"
+    state: present
+
+- name: Verify via info module
+  <namespace>.<collection>.<module_name>_info:
+    name: "test-resource"
+  register: verify
+
+- name: Assert created
+  assert:
+    that:
+      - verify.resources | length == 1
+```
+
+This is the ONLY acceptable cross-module dependency — action↔info pairs complement each other.
+
+*Source: PR review*
+
+### RULE: Never Push Code Without Passing Integration Tests
+
+NEVER push to remote or create PRs if integration tests have not passed. If the test server is unreachable, WAIT. Do not push untested code.
+
+*Source: PR review — code was pushed while test server was unreachable*
+
+### RULE: No Runner Playbook
+
+Never combine multiple test suites into a single runner playbook. Each integration test runs independently via `ansible-test integration <module_name>`.
+
+*Source: PR review learning*
+
+### RULE: Integration Tests Must Be Self-Contained Playbooks
+
+Each `main.yml` MUST be a full playbook with `hosts:`, `vars_files:`, and `tasks:` — NOT a bare task file.
+
+```yaml
+# ✅ CORRECT: Full playbook
+---
+- hosts: "{{ target_host_group }}"
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Test module
+      <namespace>.<collection>.<module_name>:
+        name: "test-resource"
+        state: present
+```
+
+*Source: PR review learning*

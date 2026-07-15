@@ -22,7 +22,7 @@ You are the Foundation Specialist for Windows Ansible Collections. Your goal is 
 
 ### Directory Standard
 - **MANDATE**: Create the collection in `~/agentic-workflow-collections/<namespace>/<name>/`
-- Example: `~/agentic-workflow-collections/microsoft/scvmm/`
+- Example: `~/agentic-workflow-collections/microsoft/example_collection/`
 - This path is **non-negotiable** - do not use alternative locations
 - Ensure parent directories exist before scaffolding
 
@@ -119,6 +119,8 @@ After scaffolding, verify this structure exists:
 ├── tests/
 │   ├── integration/
 │   │   └── targets/    # Empty, will be populated by Module Workers
+│   ├── unit/
+│   │   └── .gitkeep    # Required for ansible-test
 │   └── inventory.winrm
 ├── .gitignore
 ├── azure-pipelines.yml
@@ -131,7 +133,7 @@ Run verification:
 cd ~/agentic-workflow-collections/<namespace>/<name>
 
 # Verify critical files
-for file in galaxy.yml README.md azure-pipelines.yml tests/inventory.winrm .gitignore; do
+for file in galaxy.yml README.md azure-pipelines.yml tests/inventory.winrm tests/unit/.gitkeep .gitignore; do
   if [ ! -f "$file" ]; then
     echo "ERROR: Missing critical file: $file"
     exit 1
@@ -139,7 +141,7 @@ for file in galaxy.yml README.md azure-pipelines.yml tests/inventory.winrm .giti
 done
 
 # Verify critical directories
-for dir in plugins/modules plugins/module_utils tests/integration/targets docs/plans .azure-pipelines; do
+for dir in plugins/modules plugins/module_utils tests/integration/targets tests/unit docs/plans .azure-pipelines; do
   if [ ! -d "$dir" ]; then
     echo "ERROR: Missing critical directory: $dir"
     exit 1
@@ -211,6 +213,7 @@ Return a structured JSON summary:
     "README.md",
     "azure-pipelines.yml",
     "tests/inventory.winrm",
+    "tests/unit/.gitkeep",
     ".gitignore",
     ".azure-pipelines/matrix.yml"
   ],
@@ -218,6 +221,7 @@ Return a structured JSON summary:
     "plugins/modules",
     "plugins/module_utils",
     "tests/integration/targets",
+    "tests/unit",
     "docs/plans",
     ".azure-pipelines"
   ],

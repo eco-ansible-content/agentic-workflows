@@ -310,9 +310,7 @@ if [ "$SANITY_ERRORS" -gt 0 ]; then
     git add plugins/modules/*.py
     git commit -m "Fix sanity errors: version_added, docs, imports
 
-Based on Azure Pipelines sanity test failures.
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+Based on Azure Pipelines sanity test failures."
     
     git push "$FORK_REMOTE" "$BRANCH"
     
@@ -372,9 +370,7 @@ if [ "$LINT_ERRORS" -gt 0 ]; then
 Based on Azure Pipelines pslint failures:
 - Shortened long error messages
 - Renamed \$args variable
-- Fixed indentation
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+- Fixed indentation"
     
     git push "$FORK_REMOTE" "$BRANCH"
     
@@ -793,3 +789,44 @@ When fixing CI failures, create separate focused commits for each fix (don't ame
 Check orphaned files, undefined functions, unused imports, author consistency, test quality before creating PR
 
 *Source: Team insight from Hen Yaish*
+
+### RULE: Chain-Rebase After Amending Commits
+
+If you amend a commit on a branch that has downstream branches (e.g., fixing CI on branch-a while branch-b and branch-c depend on it), rebase downstream branches **sequentially**:
+
+```bash
+# After amending commit on branch-a:
+git checkout branch-b
+git rebase branch-a  # rebase onto amended branch-a
+
+git checkout branch-c
+git rebase branch-b  # rebase onto rebased branch-b, NOT independently onto branch-a
+```
+
+**Why**: Independent rebases cause divergent histories and merge conflicts between related branches.
+
+*Source: Swarm session learning*
+
+### RULE: Install Dependencies Before CI Lint
+
+`antsibull-docs lint-collection-docs` requires collection dependencies to be installed first. Always install deps before running lint:
+
+```bash
+# ✅ CORRECT: Install deps first
+ansible-galaxy collection install ansible.windows -p ./collections/
+antsibull-docs lint-collection-docs --plugin-docs .
+
+# ❌ WRONG: Run lint without deps
+antsibull-docs lint-collection-docs --plugin-docs .
+# Fails with import errors for ansible.windows modules
+```
+
+When fixing CI lint failures, check if the pipeline's setup step installs dependencies. If not, add the install step before the lint step.
+
+*Source: PR review learning*
+
+### RULE: Never Include Claude Code Attribution
+
+Remove any "Generated with Claude Code" or "Co-Authored-By: Claude" lines from commit messages and PR descriptions. This applies to ALL commits pushed during CI fix iterations.
+
+*Source: PR review — "its unprofessional"*

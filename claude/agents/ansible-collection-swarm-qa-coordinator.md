@@ -427,7 +427,145 @@ ansible-test integration example_resource --python 3.9
 - ✅ Backlog updated with [x] or [!]
 - ✅ Peer review completed
 
+## Learned Patterns (from PR reviews)
+
+### RULE: Complementary Test Pattern — Action + Info Modules Must Cross-Validate
+
+**Action module** integration tests MUST use the corresponding **info module** to query and validate data after state changes.
+
+**Info module** integration tests MUST use the corresponding **action module** to create the testing environment to query from.
+
+```yaml
+# ✅ CORRECT: Action module test uses info module to verify
+# tests/integration/targets/<module_name>/tasks/main.yml
+---
+- hosts: "{{ target_host_group }}"
+  vars_files:
+    - vars/main.yml
+
+  tasks:
+    - name: Create resource
+      <namespace>.<collection>.<module_name>:
+        name: "test-resource"
+        state: present
+      register: create_result
+
+    - name: Verify creation via info module
+      <namespace>.<collection>.<module_name>_info:
+        name: "test-resource"
+      register: info_result
+
+    - name: Assert resource was created correctly
+      assert:
+        that:
+          - info_result.resources | length == 1
+          - info_result.resources[0].name == "test-resource"
+```
+
+```yaml
+# ✅ CORRECT: Info module test uses action module to set up data
+# tests/integration/targets/<module_name>_info/tasks/main.yml
+---
+- hosts: "{{ target_host_group }}"
+  vars_files:
+    - vars/main.yml
+
+  tasks:
+    - name: Set up test data using action module
+      <namespace>.<collection>.<module_name>:
+        name: "test-resource-for-info"
+        state: present
+
+    - name: Query using info module
+      <namespace>.<collection>.<module_name>_info:
+        name: "test-resource-for-info"
+      register: result
+
+    - name: Validate info output
+      assert:
+        that:
+          - result.resources is defined
+```
+
+**This is the ONLY acceptable cross-module dependency in tests** — action↔info pairs are complementary by design.
+
+*Source: PR review — "action modules integration test should use the info module to query and validate data"*
+
+### RULE: Never Push Code Without Passing Integration Tests
+
+**NEVER push to remote or create PRs if integration tests have not passed.** If the test environment is unreachable, WAIT. Do not push untested code.
+
+```bash
+# ✅ CORRECT: Verify tests pass before pushing
+ansible-test integration <module_name> --inventory tests/integration/inventory
+# Only push if exit code 0
+git push "$FORK_REMOTE" "$BRANCH"
+
+# ❌ WRONG: Push because "CI will catch it"
+git push "$FORK_REMOTE" "$BRANCH"  # Tests haven't run!
+```
+
+**If test server is down**: Document in `blocked_modules.md` and WAIT for server availability. Never push untested code.
+
+*Source: PR review — code was pushed while test server was unreachable*
+
+### RULE: No Runner Playbook — Each Test Runs Independently
+
+**NEVER combine multiple test suites into a single runner playbook.** Each integration test target must be independently executable via `ansible-test integration <module_name>`.
+
+```bash
+# ❌ WRONG: Runner playbook that includes all tests
+# tests/integration/targets/run_all/tasks/main.yml
+- include_tasks: ../example_resource/tasks/main.yml
+- include_tasks: ../example_service/tasks/main.yml
+
+# ✅ CORRECT: Each module tested independently
+ansible-test integration example_resource
+ansible-test integration example_service
+```
+
+*Source: PR review learning*
+
+### RULE: Integration Tests Must Be Self-Contained Playbooks
+
+Each `tests/integration/targets/<module>/tasks/main.yml` MUST be a **full playbook**, not a bare task file.
+
+```yaml
+# ✅ CORRECT: Self-contained playbook with hosts and vars
+---
+- hosts: "{{ target_host_group }}"
+  vars_files:
+    - vars/main.yml
+
+  tasks:
+    - name: Test module functionality
+      <namespace>.<collection>.<module_name>:
+        name: "test-resource"
+        state: present
+      register: result
+```
+
+```yaml
+# ❌ WRONG: Bare task file (not a playbook)
+---
+- name: Test module functionality
+  <namespace>.<collection>.<module_name>:
+    name: "test-resource"
+    state: present
+  register: result
+```
+
+**Required playbook elements:**
+- `hosts:` targeting the appropriate host group
+- `vars_files:` referencing test variables
+- Full task blocks under `tasks:`
+
+*Source: PR review learning*
+
 ## Forbidden Actions
 
 - Do NOT skip tests if environment available
 - Do NOT mark as DONE if tests blocked
+- Do NOT push code without passing integration tests
+- Do NOT combine tests into a runner playbook
+- Do NOT create bare task files for integration tests

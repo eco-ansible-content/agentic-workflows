@@ -567,11 +567,19 @@ if __name__ == '__main__':
 tests/integration/targets/
 └── <module_name>/           # ONE module ONLY
     ├── tasks/
-    │   └── main.yml         # Tests ONLY this module
+    │   └── main.yml         # MUST be a playbook (hosts:, vars_files:, tasks:)
+    ├── vars/
+    │   └── main.yml         # Test variables
     ├── meta/
     │   └── main.yml         # dependencies: [] (ALWAYS EMPTY)
     └── defaults/
-        └── main.yml         # Test variables (optional)
+        └── main.yml         # Default variables (optional)
+```
+
+**Also ensure `tests/unit/.gitkeep` exists** — ansible-test fails without the `tests/unit/` directory:
+```bash
+mkdir -p tests/unit
+touch tests/unit/.gitkeep
 ```
 
 **FORBIDDEN Patterns**:
@@ -611,105 +619,111 @@ dependencies: []  # ALWAYS EMPTY - no dependencies on other modules
 
 **File 2**: `tests/integration/targets/<module_name>/tasks/main.yml`
 
+🚨 **MUST be a self-contained playbook** with `hosts:` and `vars_files:`, NOT a bare task file.
+
 Create 4-stage test (adapted to platform):
 
 ```yaml
 # tests/integration/targets/example_resource/tasks/main.yml
 ---
-# ISOLATION: This test is FULLY SELF-CONTAINED
-# - Uses ONLY example_resource module (the module being tested)
-# - No calls to other modules (other_module, another_module, etc.)
-# - Creates its own test resources
-# - Cleans up after itself
-# - Can run standalone: ansible-test integration example_resource
+- hosts: windows
+  vars_files:
+    - vars/main.yml
 
-# Stage 1: Initial Run (create resource)
-- name: Generate unique test name
-  set_fact:
-    test_host_name: "test-host-{{ 999999 | random }}"
+  tasks:
+    # Stage 1: Initial Run (create resource)
+    - name: Generate unique test name
+      set_fact:
+        test_host_name: "test-host-{{ 999999 | random }}"
 
-- name: Create resource
-  example_resource:
-    name: "{{ test_host_name }}"
-    api_endpoint: "{{ scapi_endpoint }}"
-    state: present
-  register: result
+    - name: Create resource
+      example_resource:
+        name: "{{ test_host_name }}"
+        api_endpoint: "{{ platform_endpoint }}"
+        state: present
+      register: result
 
-- name: Verify host was created
-  assert:
-    that:
-      - result is changed
-      - result.host is defined
-      - result.host.name == test_host_name
+    - name: Verify host was created
+      assert:
+        that:
+          - result is changed
+          - result.host is defined
+          - result.host.name == test_host_name
 
-# Stage 2: Idempotency (no changes on repeat)
-- name: Run same operation again
-  example_resource:
-    name: "{{ test_host_name }}"
-    api_endpoint: "{{ scapi_endpoint }}"
-    state: present
-  register: result_idempotent
+    # Stage 2: Idempotency (no changes on repeat)
+    - name: Run same operation again
+      example_resource:
+        name: "{{ test_host_name }}"
+        api_endpoint: "{{ platform_endpoint }}"
+        state: present
+      register: result_idempotent
 
-- name: Verify no change on second run
-  assert:
-    that:
-      - result_idempotent is not changed
-      - result_idempotent.host.name == test_host_name
+    - name: Verify no change on second run
+      assert:
+        that:
+          - result_idempotent is not changed
+          - result_idempotent.host.name == test_host_name
 
-# Stage 3: Check Mode (dry-run, no actual changes)
-- name: Test check mode (dry-run deletion)
-  example_resource:
-    name: "{{ test_host_name }}"
-    api_endpoint: "{{ scapi_endpoint }}"
-    state: absent
-  check: true
-  register: result_check
+    # Stage 3: Check Mode (dry-run, no actual changes)
+    - name: Test check mode (dry-run deletion)
+      example_resource:
+        name: "{{ test_host_name }}"
+        api_endpoint: "{{ platform_endpoint }}"
+        state: absent
+      check: true
+      register: result_check
 
-- name: Verify check mode reports it would change
-  assert:
-    that:
-      - result_check is changed
+    - name: Verify check mode reports it would change
+      assert:
+        that:
+          - result_check is changed
 
-- name: Verify host still exists (check mode didn't actually delete)
-  example_resource:
-    name: "{{ test_host_name }}"
-    api_endpoint: "{{ scapi_endpoint }}"
-    state: present
-  register: verify_still_exists
-  
-- name: Confirm resource still present
-  assert:
-    that:
-      - verify_still_exists is not changed  # Still exists, no creation needed
+    - name: Verify host still exists (check mode didn't actually delete)
+      example_resource:
+        name: "{{ test_host_name }}"
+        api_endpoint: "{{ platform_endpoint }}"
+        state: present
+      register: verify_still_exists
 
-# Stage 4: Error Handling (invalid input produces clear error)
-- name: Test invalid parameters
-  example_resource:
-    name: ""  # Empty name - should fail
-    api_endpoint: "{{ scapi_endpoint }}"
-    state: present
-  register: result_error
-  failed_when: false  # Don't fail the test on expected failure
+    - name: Confirm resource still present
+      assert:
+        that:
+          - verify_still_exists is not changed
 
-- name: Verify error message is clear
-  assert:
-    that:
-      - result_error is failed
-      - result_error.msg is defined
-      - "'name' in result_error.msg or 'empty' in result_error.msg"
+    # Stage 4: Error Handling (invalid input produces clear error)
+    - name: Test invalid parameters
+      example_resource:
+        name: ""
+        api_endpoint: "{{ platform_endpoint }}"
+        state: present
+      register: result_error
+      failed_when: false
 
-# Cleanup (ALWAYS runs - critical for test isolation)
-- name: Remove test host (cleanup)
-  example_resource:
-    name: "{{ test_host_name }}"
-    api_endpoint: "{{ scapi_endpoint }}"
-    state: absent
-  register: cleanup
-  
-- name: Verify cleanup succeeded
-  assert:
-    that:
-      - cleanup is changed or cleanup is not changed  # Either deleted or already gone
+    - name: Verify error message is clear
+      assert:
+        that:
+          - result_error is failed
+          - result_error.msg is defined
+          - "'name' in result_error.msg or 'empty' in result_error.msg"
+
+    # Cleanup (ALWAYS runs - critical for test isolation)
+    - name: Remove test host (cleanup)
+      example_resource:
+        name: "{{ test_host_name }}"
+        api_endpoint: "{{ platform_endpoint }}"
+        state: absent
+      register: cleanup
+
+    - name: Verify cleanup succeeded
+      assert:
+        that:
+          - cleanup is changed or cleanup is not changed
+```
+
+**File 3**: `tests/integration/targets/<module_name>/vars/main.yml` (test variables)
+```yaml
+---
+platform_endpoint: "{{ lookup('env', 'PLATFORM_HOST') | default('platform.example.local') }}"
 ```
 
 **Test Isolation Checklist**:
@@ -989,3 +1003,46 @@ Always check current state before create/update operations to ensure idempotent 
 Ansible required_if cannot handle complex conditional validation; use manual validation with preserved error messages for backward compatibility
 
 *Source: Team insight from Hen Yaish*
+
+### RULE: Complementary Test Pattern — Action + Info Modules
+
+Action module tests MUST use the corresponding info module to verify state changes.
+Info module tests MUST use the corresponding action module to set up test data.
+
+```yaml
+# Action module test: use info module to verify
+- name: Create resource
+  <namespace>.<collection>.<module_name>:
+    name: "test-resource"
+    state: present
+
+- name: Verify via info module
+  <namespace>.<collection>.<module_name>_info:
+    name: "test-resource"
+  register: verify
+```
+
+This is the ONLY acceptable cross-module dependency — action↔info pairs complement each other.
+
+*Source: PR review learning*
+
+### RULE: No Runner Playbook
+
+Never combine multiple module tests into a single runner playbook. Each module test runs independently via `ansible-test integration <module_name>`.
+
+*Source: PR review learning*
+
+### RULE: Integration Test Must Be Playbook Format
+
+Each `main.yml` must include `hosts:`, `vars_files:`, and `tasks:` — it must be a complete playbook, not a bare task list.
+
+*Source: PR review learning*
+
+### RULE: Always Include tests/unit/.gitkeep
+
+ansible-test fails without the `tests/unit/` directory. Always create it:
+```bash
+mkdir -p tests/unit && touch tests/unit/.gitkeep
+```
+
+*Source: PR review learning*

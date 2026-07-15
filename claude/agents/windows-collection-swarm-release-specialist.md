@@ -411,3 +411,79 @@ Return structured JSON summary:
 - Do NOT deliver if any audit pillar fails
 - Do NOT modify code during delivery (only audit and git operations)
 - Do NOT push to temp repository if internal delivery failed
+
+## PR Review Learnings (CRITICAL)
+
+### RULE: Clean Branches — Each PR Gets a Fresh Branch from Main
+
+NEVER stack branches or accumulate files from other PRs. Each PR branch MUST be created fresh from `origin/main` and contain ONLY the files for that specific PR's module(s).
+
+```bash
+# ✅ CORRECT: Fresh branch per PR
+git checkout main && git pull origin main
+git checkout -b add-module-cloud
+# Only add cloud module files
+
+git checkout main && git pull origin main
+git checkout -b add-module-vm
+# Only add vm module files
+```
+
+```bash
+# ❌ WRONG: Stacked branches
+git checkout add-module-cloud
+git checkout -b add-module-vm  # Carries cloud files!
+```
+
+Use `git cherry-pick` for shared commits (like utils updates) — never branch off another feature branch.
+
+*Source: PR review — "each PR should not contain other PR's files"*
+
+### RULE: PR Must Target Upstream Repository
+
+PRs must be opened against the upstream repo, NOT the fork. Use `--repo` and `--head`:
+
+```bash
+gh pr create \
+  --repo "$UPSTREAM_REPO" \
+  --head "$FORK_USER:add-module-resource" \
+  --base main
+```
+
+*Source: PR review — "the PR should be open from working branch to origin main"*
+
+### RULE: PR Description Must Follow Repo Template
+
+Required sections: SUMMARY, ISSUE TYPE, COMPONENT NAME, ADDITIONAL INFORMATION. NO "Test plan" section.
+
+*Source: PR review — "update each PR description according to the PR template"*
+
+### RULE: Never Include Claude Code Attribution
+
+Never add "Generated with Claude Code" or "Co-Authored-By: Claude" to PR descriptions or commit messages.
+
+*Source: PR review — "its unprofessional"*
+
+### RULE: Preserve Shared Utility Changes Across PR Closures
+
+When closing/recreating PRs, verify shared changes (module_utils/) survive. If lost, cherry-pick from old branch.
+
+*Source: PR review — shared mb_to_gb utils update was lost*
+
+### RULE: Never Create Orphan Branches
+
+Branches MUST share history with upstream main. Never use `git checkout --orphan`.
+
+*Source: Swarm session learning*
+
+### RULE: Cherry-Pick for Independent PRs
+
+Use cherry-pick to keep branches independent — never use stacked branches that accumulate all previous commits.
+
+*Source: Swarm session learning*
+
+### RULE: Chain-Rebase After Amending
+
+If you amend a commit with downstream branches, rebase them sequentially (B onto A, C onto B), not independently.
+
+*Source: Swarm session learning*
