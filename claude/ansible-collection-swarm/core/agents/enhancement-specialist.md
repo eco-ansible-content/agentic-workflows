@@ -98,33 +98,52 @@ fi
 
 #### ACTION 2: Determine Changelog Strategy
 
-**Execute**:
+**Execute** (classify by git history — backlog uses checkboxes, not `status:` fields):
 ```bash
-# Read module backlog to identify NEW vs ENHANCED modules
-NEW_MODULES=$(grep "status: pending\|status: TODO" docs/plans/module_backlog.md | awk '{print $2}')
-ENHANCED_MODULES=$(grep "status: enhancement" docs/plans/module_backlog.md | awk '{print $2}')
+cd "${COLLECTION_LOCATION:-.}"
+
+# Modules in scope from backlog checkboxes: "- [ ] module_name - description"
+SCOPE_MODULES=$(
+  grep -E '^\- \[[[:space:]x~!]\]' docs/plans/module_backlog.md 2>/dev/null \
+    | sed -E 's/^- \[[^]]*\][[:space:]]+//' \
+    | awk '{print $1}' \
+    | grep -v '^$' \
+    | sort -u
+)
+
+NEW_MODULES=""
+ENHANCED_MODULES=""
+for module in $SCOPE_MODULES; do
+  IS_EXISTING=false
+  for ext in py ps1 yml; do
+    if git log --all --oneline -- "plugins/modules/${module}.${ext}" 2>/dev/null | grep -q .; then
+      IS_EXISTING=true
+      break
+    fi
+  done
+  if [ "$IS_EXISTING" = "true" ]; then
+    ENHANCED_MODULES="$ENHANCED_MODULES $module"
+  else
+    NEW_MODULES="$NEW_MODULES $module"
+  fi
+done
 
 echo "📋 Module Scope:"
 echo "   New modules: $NEW_MODULES"
 echo "   Enhanced modules: $ENHANCED_MODULES"
 ```
 
-**Changelog Fragment Rules** (CRITICAL):
-- ✅ **ALL modules**: Create changelog fragment in `changelogs/fragments/` for EVERY module (new or enhanced)
-- ❌ **NEVER modify**: `changelogs/changelog.yaml` (maintainer updates during release)
-- ❌ **NEVER modify**: `CHANGELOG.rst` (maintainer updates during release)
-- ❌ **NEVER modify**: `galaxy.yml` version (maintainer controls versioning)
-
-**Fragment file format**: `changelogs/fragments/<epic-key>-<module-name>.yml`
+**Changelog Fragment Rules** (CRITICAL — PR #905):
+- ✅ **ENHANCED modules / bugfixes**: Create changelog fragment in `changelogs/fragments/<epic-key>-<module-name>.yml`
+- ❌ **NEVER modify**: `changelogs/changelog.yaml`, `CHANGELOG.rst`, or `galaxy.yml` version
 
 **Store decision**:
 ```bash
-# Save for later steps
 echo "$ENHANCED_MODULES" > /tmp/enhanced_modules.txt
 echo "$NEW_MODULES" > /tmp/new_modules.txt
 ```
 
-**Updated rule**: PR #907 showed that release-specialist needs fragments for ALL modules to properly validate deliverables.
+**Learned from**: PR #905 — maintainer: "No need to add changelog for new module; tooling does it automatically."
 
 ---
 
@@ -263,6 +282,7 @@ Pattern to follow:
 5. **Match documentation markup** - Use collection's semantic markup (V/O/C)
 6. **Preserve version** - Don't change galaxy.yml version (user decides)
 7. **No breaking changes** - Don't modify existing modules
+8. **Python unit tests** - If language is Python, create `tests/unit/plugins/modules/test_<module>.py` for every new/changed module (ask user with risk before skipping)
 
 ### Documentation Markup (CRITICAL)
 
@@ -364,6 +384,50 @@ ls -1 plugins/modules/win_*.ps1 | grep -E "(win_winget|win_package_management)" 
 
 **Store the result** as an array of module names (e.g., `["win_winget", "win_package_management"]`)
 
+---
+
+#### PRECHECK: Python Unit Tests (MANDATORY for `.py` modules)
+
+Before the integration test loop, verify and run Python unit tests:
+
+```bash
+# Python modules: unit tests FIRST (mandatory)
+if ls plugins/modules/*.py >/dev/null 2>&1; then
+  for module in "${new_modules[@]}"; do
+    if [ -f "plugins/modules/${module}.py" ]; then
+      UNIT="tests/unit/plugins/modules/test_${module}.py"
+      if [ ! -f "$UNIT" ]; then
+        echo "❌ Missing unit tests for Python module: $module — ask user with risk before skipping"
+        exit 1
+      fi
+    fi
+  done
+  ansible-test units --python 3.9 || exit 1
+fi
+```
+
+**Example for example_resource**:
+```bash
+test -f tests/unit/plugins/modules/test_example_resource.py
+ansible-test units --python 3.9 -- tests/unit/plugins/modules/test_example_resource.py
+```
+
+**RESPONSE HANDLING**:
+
+**IF unit test file is MISSING**:
+- Log: "❌ <module_name> missing unit tests (expected tests/unit/plugins/modules/test_<module_name>.py)"
+- **STOP and ask the user** with an explicit risk statement before proceeding
+
+**IF test PASSES** (exit code 0):
+- Log: "✅ <module_name> unit tests PASSED"
+- Move to next module
+
+**IF test FAILS** (exit code != 0):
+- Log: "❌ <module_name> unit tests FAILED"
+- **ANALYZE / FIX / RETRY** (max 3 attempts)
+- **IF still failing after 3 attempts** → Report failure and STOP
+
+**CRITICAL**: You MUST actually execute these commands.
 ---
 
 #### ACTION 3: Execute Integration Tests (WITH FIX-RETRY LOOP)
@@ -920,11 +984,6 @@ Use #AnsibleRequires not #Requires, import Ansible.Basic not Ansible.ModuleUtils
 
 *Source: Team insight from Hen Yaish*
 
-### Pattern: Changelog-Fragment-Format
-Use changelogs/fragments/<epic>-<module>.yml format for all module changes (new or enhanced)
-
-*Source: Team insight from Hen Yaish*
-
 ### Pattern: Required-If-Limitations
 Ansible required_if cannot handle complex conditional validation; use manual validation with preserved error messages for backward compatibility
 
@@ -957,3 +1016,8 @@ Never add "Generated with Claude Code" or "Co-Authored-By: Claude" to PR descrip
 NEVER push code or create PRs if integration tests have not passed. If the test server is unreachable, WAIT for it. Do not push untested code.
 
 *Source: PR review — code was pushed while test server was unreachable*
+
+### Pattern: Changelog-Fragment-Format
+Use changelogs/fragments/<epic>-<module>.yml for enhancements and bugfixes to existing modules only; skip fragments for newly created modules (tooling auto-generates)
+
+*Source: Team insight from Ron Gershburg*
