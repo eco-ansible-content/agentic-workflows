@@ -818,23 +818,39 @@ delivery:
 ### Execution Based on Strategy
 
 **If `pr_strategy: one_per_module`**:
+
+🚨 **CRITICAL: Each branch MUST be created fresh from main.** Never branch off another feature branch — this causes "dirty branches" where PRs contain other PRs' files.
+
 ```bash
 # For each module in epic:
 for MODULE in "${MODULES[@]}"; do
-  # 1. Create separate branch: add-module-{module_name}
-  BRANCH="add-module-$MODULE"
+  # 1. ALWAYS start from fresh main
+  git checkout main && git pull origin main
   
-  # 2. Spawn enhancement-specialist with single module scope
-  # 3. Spawn release-specialist for this module only
-  # 4. Spawn ci-validation-specialist for the PR
-  # 5. Move to next module
+  # 2. Create INDEPENDENT branch (not stacked off previous module branch)
+  BRANCH="add-module-$MODULE"
+  git checkout -b "$BRANCH"
+  
+  # 3. If module needs shared utils (e.g., module_utils updates), cherry-pick them
+  if [ -n "$SHARED_UTILS_COMMIT" ]; then
+    git cherry-pick "$SHARED_UTILS_COMMIT"
+  fi
+  
+  # 4. Spawn enhancement-specialist with single module scope
+  # 5. Spawn release-specialist for this module only
+  #    CRITICAL: release-specialist must use --repo for upstream target
+  # 6. Spawn ci-validation-specialist for the PR
+  # 7. Return to main before next module
+  git checkout main
 done
 ```
 
 **If `pr_strategy: bundled`**:
 ```bash
-# All modules in one branch: add-modules-{EPIC_KEY}
+# All modules in one branch from main: add-modules-{EPIC_KEY}
+git checkout main && git pull origin main
 BRANCH="add-modules-$EPIC_KEY"
+git checkout -b "$BRANCH"
 
 # Spawn enhancement-specialist with all modules
 # Spawn release-specialist once
@@ -842,6 +858,25 @@ BRANCH="add-modules-$EPIC_KEY"
 ```
 
 **Default if user doesn't specify**: `one_per_module` (maintainer preference)
+
+### 🚨 CRITICAL: PR and Branch Hygiene Rules
+
+These rules are NON-NEGOTIABLE. Violations have caused PR rejections and wasted work.
+
+1. **Clean Branches**: Each PR branch is created fresh from `origin/main`. NEVER branch off another feature branch. Each branch contains ONLY its own module's files.
+
+2. **PR Target**: PRs MUST target the upstream repo, not the fork. Use:
+   ```bash
+   gh pr create --repo <upstream-org>/<repo> --head <fork-user>:<branch> --base main
+   ```
+
+3. **No Orphan Branches**: Never use `git checkout --orphan` — branches must share history with upstream.
+
+4. **Cherry-Pick for Independence**: When multiple PRs need a shared change (e.g., module_utils), cherry-pick that commit into each branch independently.
+
+5. **Track Shared Utilities**: When closing/recreating PRs, verify that shared utility changes (module_utils/) survive. If lost, cherry-pick from the old branch.
+
+6. **Chain-Rebase**: After amending a commit with downstream branches, rebase them sequentially (B onto A, C onto B), not independently.
 
 ---
 

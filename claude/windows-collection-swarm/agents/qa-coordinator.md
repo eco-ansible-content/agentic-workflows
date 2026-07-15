@@ -219,11 +219,11 @@ If a module cannot be tested due to environment issues (not code bugs):
 **Create/Update** `docs/plans/blocked_modules.md`:
 
 ```markdown
-### Module: scvmm_host
+### Module: example_collection_host
 
 **Status**: ⚠️ CODE COMPLETE, TESTS BLOCKED
 **Jira**: EPIC-123
-**Path**: plugins/modules/scvmm_host.ps1
+**Path**: plugins/modules/example_collection_host.ps1
 
 **Build Status**:
 - ✅ Module code written
@@ -232,28 +232,28 @@ If a module cannot be tested due to environment issues (not code bugs):
 - ✅ Code review passed
 
 **Test Status**:
-- ❌ Stage 1 (Initial Run): BLOCKED - SCVMM Server not installed
+- ❌ Stage 1 (Initial Run): BLOCKED - Platform Server not installed
 - ❌ Stage 2 (Idempotency): BLOCKED
 - ❌ Stage 3 (Check Mode): BLOCKED
 - ❌ Stage 4 (Error Handling): BLOCKED
 
-**Blocked By**: Platform prerequisite failure - SCVMM Server
-**Degraded Environment**: Only SCVMM Console available (read-only)
+**Blocked By**: Platform prerequisite failure - Platform Server
+**Degraded Environment**: Only Platform Console available (read-only)
 
 **Ready to Test**: NO
 **Prerequisites to Fix**:
-1. Install SCVMM Server (full, not console)
+1. Install Platform Server (full, not console)
 2. Configure SQL Server backend
-3. Add at least 1 Hyper-V host to SCVMM
+3. Add at least 1 Hyper-V host to Platform
 
 **Test Command When Fixed**:
 \`\`\`bash
-ansible-test integration scvmm_host --python 3.9
+ansible-test integration example_collection_host --python 3.9
 \`\`\`
 
 **Last Attempt**: 2026-05-27 14:32:15
-**Attempt Log**: tests/integration/targets/scvmm_host/attempt_1.log
-**Error**: "Cannot connect to SCVMM Server on localhost"
+**Attempt Log**: tests/integration/targets/example_collection_host/attempt_1.log
+**Error**: "Cannot connect to Platform Server on localhost"
 ```
 
 ### Mark Module in Backlog
@@ -261,7 +261,7 @@ ansible-test integration scvmm_host --python 3.9
 Update `docs/plans/module_backlog.md`:
 
 ```markdown
-- [!] scvmm_host (EPIC-123) - CODE COMPLETE, TESTS BLOCKED (SCVMM Server required)
+- [!] example_collection_host (EPIC-123) - CODE COMPLETE, TESTS BLOCKED (Platform Server required)
 ```
 
 **Legend**:
@@ -277,10 +277,10 @@ When user indicates environment is fixed later, resume testing:
 ```bash
 # Verify environment is now ready
 Import-Module VirtualMachineManager
-Get-SCVMMServer -ComputerName localhost
+Get-PlatformServer -ComputerName localhost
 
 # Read blocked_modules.md to get blocked module list
-$blockedModules = @("scvmm_host", "scvmm_vm", "scvmm_library_share")
+$blockedModules = @("example_collection_host", "example_collection_vm", "example_collection_library_share")
 
 foreach ($module in $blockedModules) {
     Write-Output "Resuming tests for $module"
@@ -296,3 +296,61 @@ foreach ($module in $blockedModules) {
 }
 ```
 
+## PR Review Learnings (CRITICAL)
+
+### RULE: Complementary Test Pattern — Action + Info Modules Must Cross-Validate
+
+Action module integration tests MUST use the corresponding info module to query and validate data after state changes. Info module integration tests MUST use the corresponding action module to create the testing environment to query from.
+
+```yaml
+# Action module test: verify creation via info module
+- name: Create resource
+  <namespace>.<collection>.<module_name>:
+    name: "test-resource"
+    state: present
+
+- name: Verify via info module
+  <namespace>.<collection>.<module_name>_info:
+    name: "test-resource"
+  register: verify
+
+- name: Assert created
+  assert:
+    that:
+      - verify.resources | length == 1
+```
+
+This is the ONLY acceptable cross-module dependency — action↔info pairs complement each other.
+
+*Source: PR review*
+
+### RULE: Never Push Code Without Passing Integration Tests
+
+NEVER push to remote or create PRs if integration tests have not passed. If the test server is unreachable, WAIT. Do not push untested code.
+
+*Source: PR review — code was pushed while test server was unreachable*
+
+### RULE: No Runner Playbook
+
+Never combine multiple test suites into a single runner playbook. Each integration test runs independently via `ansible-test integration <module_name>`.
+
+*Source: PR review learning*
+
+### RULE: Integration Tests Must Be Self-Contained Playbooks
+
+Each `main.yml` MUST be a full playbook with `hosts:`, `vars_files:`, and `tasks:` — NOT a bare task file.
+
+```yaml
+# ✅ CORRECT: Full playbook
+---
+- hosts: "{{ target_host_group }}"
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Test module
+      <namespace>.<collection>.<module_name>:
+        name: "test-resource"
+        state: present
+```
+
+*Source: PR review learning*

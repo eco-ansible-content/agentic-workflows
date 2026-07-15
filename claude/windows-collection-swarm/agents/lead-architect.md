@@ -247,13 +247,13 @@ Your decision tree:
 
 **Scenario 2: Partial Success** (degraded environment)
 ```json
-Agent reports: "SCVMM Console installed, Server failed. 8/15 modules testable."
+Agent reports: "Platform Console installed, Server failed. 8/15 modules testable."
 
 Your action:
 1. Accept degraded environment (>50% testable)
 2. Update module backlog:
    - Mark testable modules: [ ] TODO
-   - Mark blocked modules: [SKIP] scvmm_host (requires SCVMM Server)
+   - Mark blocked modules: [SKIP] example_collection_host (requires Platform Server)
 3. Proceed to Build Phase with testable modules
 4. Report to user: "Building 8/15 modules in degraded environment"
 ```
@@ -301,3 +301,24 @@ Your action:
 - Do NOT stop for design discussions
 - Do NOT wait for user input on technical decisions
 - Do NOT proceed to delivery if any module is incomplete
+
+## PR Review Learnings (CRITICAL)
+
+### PR and Branch Hygiene Rules (NON-NEGOTIABLE)
+
+1. **Clean Branches**: Each PR branch is created fresh from `origin/main`. NEVER branch off another feature branch. Each branch contains ONLY its own module's files.
+
+2. **PR Target**: PRs MUST target the upstream repo, not the fork. Use:
+   ```bash
+   gh pr create --repo <upstream-org>/<repo> --head <fork-user>:<branch> --base main
+   ```
+
+3. **No Orphan Branches**: Never use `git checkout --orphan` — branches must share history with upstream.
+
+4. **Cherry-Pick for Independence**: When multiple PRs need a shared change (e.g., module_utils), cherry-pick that commit into each branch independently.
+
+5. **Track Shared Utilities**: When closing/recreating PRs, verify that shared utility changes (module_utils/) survive. If lost, cherry-pick from the old branch.
+
+6. **Chain-Rebase**: After amending a commit with downstream branches, rebase them sequentially (B onto A, C onto B), not independently.
+
+*Source: PR review and swarm session learnings*

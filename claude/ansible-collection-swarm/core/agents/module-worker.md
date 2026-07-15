@@ -21,20 +21,207 @@ Receive from Lead Architect:
 - **Module specification** from `module_backlog.md`
 - **Platform characteristics** from `prerequisites.md`
 - **Test environment** from `project_context.yml`
+- **Custom project brief** from `docs/plans/PROJECT_BRIEF.md` (if exists - READ FIRST)
 - **Assigned task**: Implement exactly ONE module
 
+### Check for Custom Instructions (FIRST STEP)
+
+**Before starting any work**, check if custom analysis exists:
+
+```bash
+if [ -f "docs/plans/PROJECT_BRIEF.md" ]; then
+  echo "📋 Custom project brief found - reading custom instructions..."
+  # Read the file to extract:
+  # - Critical implementation rules
+  # - Testing requirements
+  # - Known constraints
+  # - Prerequisites specific to this project
+fi
+```
+
+**If PROJECT_BRIEF.md exists**:
+1. Read the FULL file before proceeding
+2. Extract sections relevant to module implementation:
+   - "Critical Implementation Rules" → MUST/NEVER/ALWAYS patterns
+   - "Testing Requirements" → Special test configurations
+   - "Known Constraints" → Limitations to work around
+   - "Prerequisites & Environment Setup" → Dependencies
+3. **Custom rules OVERRIDE generic patterns**
+4. If brief mentions unfamiliar operations → research and adapt
+5. If brief says "use X instead of Y" → follow that directive
+
+**Custom rules take absolute precedence** over generic workflow patterns.
+
 ## Process
+
+### Step 0: Pre-Implementation Research (MANDATORY)
+
+**CRITICAL**: Complete this research BEFORE writing ANY code. This prevents:
+- AI hallucinations (inventing non-existent features)
+- Reinventing the wheel (ignoring collection utilities)
+- Text parsing when APIs exist
+- Using protected system paths
+- Missing available CLI flags
+
+#### 0.1: Search Collection Utilities FIRST
+
+```bash
+# Check if collection already has utilities for this operation
+ls module_utils/
+grep -r "Process\|HTTP\|[operation-type]" plugins/modules/
+
+# Example: Before implementing process execution
+grep -r "Start.*Process\|run_command" plugins/modules/
+```
+
+**If utility exists → USE IT. Do NOT reimplement.**
+
+Common collection utilities:
+- Process execution
+- HTTP requests
+- JSON/YAML parsing
+- File operations
+- Platform-specific APIs
+
+#### 0.2: Research Language-Appropriate Libraries
+
+Determine implementation language from `prerequisites.md`, then research:
+
+**For PowerShell modules**:
+```
+WebSearch("[tool] PowerShell module")
+WebSearch("[tool] COM API")
+WebSearch("[tool] .NET API")
+
+# Example: For WinGet
+WebSearch("WinGet PowerShell module")
+# Result: Microsoft.WinGet.Client exists → USE IT
+```
+
+**For Python modules**:
+```
+WebSearch("[tool] Python SDK")
+WebSearch("[tool] Python library")
+WebSearch("[tool] REST API")
+
+# Example: For AWS S3
+WebSearch("AWS S3 Python SDK")
+# Result: boto3 exists → USE IT
+```
+
+**For Bash modules**:
+```
+WebSearch("[tool] JSON output")
+WebSearch("[tool] systemd API")
+WebSearch("[tool] D-Bus interface")
+```
+
+**API Preference Order** (universal):
+1. Collection module_utils (checked above)
+2. Official SDK/library for [tool] in [language]
+3. Well-maintained third-party libraries
+4. Platform native APIs (COM/WMI/D-Bus/etc.)
+5. CLI with structured output (--json, --xml)
+6. CLI text parsing ← **LAST RESORT ONLY**
+
+#### 0.3: Check CLI Flags (if using CLI)
+
+```bash
+# Before parsing CLI output, check for structured output
+[tool] --help
+man [tool]
+
+WebSearch("[tool] JSON output")
+WebSearch("[tool] structured output")
+WebSearch("[tool] machine readable")
+```
+
+Common flags to look for:
+- `--json`, `--yaml`, `--xml`, `--format json`
+- `--no-progress`, `--no-color`, `--quiet`
+- `--machine-readable`, `--porcelain`
+
+**If --json exists → USE IT. Don't parse text.**
+
+#### 0.4: Verify Features Exist
+
+**Before using ANY feature, verify in official docs**:
+
+```
+WebSearch("[feature] [tool] official documentation")
+
+# Examples:
+# ❌ DON'T: Assume WINGET_RUNNING_AS_SYSTEM env var exists
+# ✅ DO: WebSearch("WinGet environment variables official documentation")
+# Result: No such env var → Don't use it
+
+# ❌ DON'T: Guess that --quiet flag exists  
+# ✅ DO: Check [tool] --help first
+```
+
+**Rule**: If feature not in official docs → It doesn't exist.
+
+#### 0.5: Research Platform Support
+
+```
+WebSearch("[tool] [platform] [version] support")
+WebSearch("[tool] system requirements")
+
+# Examples:
+# - "WinGet Windows Server 2025"  
+# - "podman RHEL 9 support"
+# - "homebrew macOS Sonoma"
+```
+
+**Be specific** in documentation:
+- "Windows Server 2025 (included by default)"
+- "Windows Server 2022 (manual install, unsupported)"
+- NOT: "Works on Windows Server"
+
+#### 0.6: Document Research Findings
+
+Create `docs/plans/research_findings_[module-name].md`:
+
+```markdown
+# Research Findings: [module-name]
+
+## Collection Utilities Available
+- [List utilities found or "None - need to implement"]
+
+## Language: [PowerShell/Python/Bash]
+
+## API/Library Research
+- **Preferred**: [SDK/library name] ([link to docs])
+- **Reason**: [Why this is best option]
+- **Alternative**: [CLI with --json] (if no library exists)
+
+## Platform Support
+- **Minimum version**: [OS version]
+- **Installation**: [Pre-installed / Manual / Unsupported]
+
+## Features Verified
+- [Feature 1]: ✅ Exists ([doc link])
+- [Feature 2]: ❌ Does not exist (don't use)
+
+## CLI Flags Available (if applicable)
+- `--json`: ✅ (use for structured output)
+- `--no-progress`: ✅ (use to avoid ANSI codes)
+```
+
+**Deliverable**: Complete research_findings file BEFORE proceeding to Step 1.
+
+---
 
 ### Step 1: Understand the Module
 
 Read module specification:
 ```
-Module: scvmm_host
-Description: Manage Hyper-V hosts in SCVMM
+Module: example_resource
+Description: Manage resources in Platform
 ```
 
 Extract:
-- **Resource**: What are we managing? (Hyper-V host)
+- **Resource**: What are we managing? (resource)
 - **Operations**: What can we do? (add, remove, configure)
 - **State**: Desired state model? (present/absent)
 
@@ -65,7 +252,7 @@ Extract:
 | Config files | Config file pattern |
 | Database queries | Database pattern |
 
-For SCVMM example: **CLI-based pattern** (PowerShell variant)
+For Platform example: **CLI-based pattern** (PowerShell variant)
 
 ### Step 4: Research the API/Interface
 
@@ -92,6 +279,114 @@ Get-Command -Module VirtualMachineManager | Where-Object {$_.Name -like "*Host*"
 # DELETE /Orion/Nodes/{id} - delete node
 ```
 
+### Step 4.5: Apply Safety Rules and Parameter Design
+
+**BEFORE implementing, apply these universal safety rules**:
+
+#### Safety Rule 1: No Connection-Breaking Operations
+
+**BLOCKED operations** (never expose as parameters):
+- ❌ `allow_reboot` - kills WinRM/SSH connection
+- ❌ Network changes during execution
+- ❌ Disabling remote management mid-run
+- ❌ Killing parent/connection processes
+
+**Think**: "What if this runs over SSH/WinRM?"
+
+**Pattern**: Provide `*_required` OUTPUT, not `allow_*` INPUT
+```yaml
+# ❌ WRONG
+parameters:
+  allow_reboot:
+    type: bool
+
+# ✅ RIGHT  
+returns:
+  reboot_required:
+    description: Whether a reboot is needed after this operation
+    type: bool
+    
+notes:
+  - Use ansible.windows.win_reboot (or equivalent) after this module if reboot_required=true
+```
+
+#### Safety Rule 2: No Protected System Directories
+
+**Platform-specific protected paths**:
+
+**Windows**:
+- ❌ `WindowsApps`, `WinSxS`, `System32\config`
+- ✅ Use: `$env:LOCALAPPDATA`, `$env:ProgramFiles`, `$env:PATH`
+
+**Linux**:
+- ❌ `/proc/kcore`, `/sys/firmware`, package internals
+- ✅ Use: `/usr/bin`, `/opt`, `/var/lib/[package]`, package manager APIs
+
+**macOS**:
+- ❌ `~/Library/.../com.apple.*`, `/System/.../PrivateFrameworks`
+- ✅ Use: `/Applications`, public paths, APIs
+
+**Any Platform**:
+- ❌ Internal/undocumented directories
+- ✅ Documented public paths, environment variables, APIs
+
+**Research**: `WebSearch("[tool] installation path [OS]")`
+
+#### Parameter Design Rule: Default to Lists
+
+**For bulk operations**, parameters should accept lists:
+
+```yaml
+# ❌ WRONG - single item only
+packages:
+  type: str
+  description: Package to install
+
+# ✅ RIGHT - supports bulk
+packages:
+  type: list
+  elements: str
+  description: Package(s) to install
+```
+
+**Applies to**:
+- Package names
+- File paths
+- Service names
+- User/group names
+- Any noun that could be plural
+
+**Implementation**:
+```python
+# Handle both single and list
+for package in module.params['packages']:
+    install(package)
+```
+
+#### Path Rules by Platform
+
+**Windows (PowerShell)**:
+```powershell
+# ✅ Use environment variables
+$installPath = $env:LOCALAPPDATA
+$programFiles = $env:ProgramFiles
+
+# ❌ Don't hardcode or use protected paths
+# $bad = "C:\Program Files\WindowsApps"  # WRONG
+```
+
+**Linux (Python/Bash)**:
+```python
+# ✅ Use standard paths or package manager
+install_path = "/usr/bin"
+config_path = "/etc/[package]"
+
+# ❌ Don't access internals
+# bad = "/proc/kcore"  # WRONG
+```
+
+---
+
 ### Step 5: Implement Following Pattern
 
 **Pattern: CLI-based (PowerShell)**
@@ -105,7 +400,7 @@ Get-Command -Module VirtualMachineManager | Where-Object {$_.Name -like "*Host*"
 $spec = @{
     options = @{
         name = @{ type = "str"; required = $true }
-        vmm_server = @{ type = "str"; required = $true }
+        api_endpoint = @{ type = "str"; required = $true }
         state = @{ type = "str"; choices = "present", "absent"; default = "present" }
     }
     supports_check_mode = $true
@@ -114,14 +409,14 @@ $spec = @{
 $module = [Ansible.Basic.AnsibleModule]::Create($args, $spec)
 
 $name = $module.Params.name
-$vmm_server = $module.Params.vmm_server
+$api_endpoint = $module.Params.api_endpoint
 $state = $module.Params.state
 
 # Import required module
 Import-Module VirtualMachineManager
 
-# Connect to SCVMM
-$vmmConnection = Get-SCVMMServer -ComputerName $vmm_server
+# Connect to Platform
+$vmmConnection = Get-PlatformServer -ComputerName $api_endpoint
 
 # PATTERN: Check current state (GET)
 $currentHost = Get-SCVMHost -VMMServer $vmmConnection -ComputerName $name -ErrorAction SilentlyContinue
@@ -264,82 +559,180 @@ if __name__ == '__main__':
 
 ### Step 6: Implement Tests
 
+**CRITICAL ISOLATION RULE**: Each module gets its OWN integration test with ZERO dependencies on other modules.
+
+**Test Structure** (MANDATORY):
+
+```
+tests/integration/targets/
+└── <module_name>/           # ONE module ONLY
+    ├── tasks/
+    │   └── main.yml         # MUST be a playbook (hosts:, vars_files:, tasks:)
+    ├── vars/
+    │   └── main.yml         # Test variables
+    ├── meta/
+    │   └── main.yml         # dependencies: [] (ALWAYS EMPTY)
+    └── defaults/
+        └── main.yml         # Default variables (optional)
+```
+
+**Also ensure `tests/unit/.gitkeep` exists** — ansible-test fails without the `tests/unit/` directory:
+```bash
+mkdir -p tests/unit
+touch tests/unit/.gitkeep
+```
+
+**FORBIDDEN Patterns**:
+
+❌ **NEVER create multi-module test directories**:
+```
+tests/integration/targets/
+└── all_modules/  # ❌ WRONG - tests multiple modules
+```
+
+❌ **NEVER add dependencies in meta/main.yml**:
+```yaml
+# meta/main.yml
+dependencies:
+  - other_module  # ❌ WRONG - creates coupling
+```
+
+❌ **NEVER call other modules in your test**:
+```yaml
+# tasks/main.yml for other_module test
+- name: Create host first
+  example_resource:  # ❌ WRONG - testing other_module, don't use example_resource
+    name: test-host
+```
+
+**Why**: If example_resource is broken, your other_module test fails. Misleading cascade failures.
+
+---
+
+**CORRECT Pattern** - Isolated, standalone test:
+
+**File 1**: `tests/integration/targets/<module_name>/meta/main.yml`
+```yaml
+---
+dependencies: []  # ALWAYS EMPTY - no dependencies on other modules
+```
+
+**File 2**: `tests/integration/targets/<module_name>/tasks/main.yml`
+
+🚨 **MUST be a self-contained playbook** with `hosts:` and `vars_files:`, NOT a bare task file.
+
 Create 4-stage test (adapted to platform):
 
 ```yaml
-# tests/integration/targets/scvmm_host/tasks/main.yml
+# tests/integration/targets/example_resource/tasks/main.yml
 ---
-# Stage 1: Initial Run
-- name: Create Hyper-V host
-  scvmm_host:
-    name: "{{ test_host }}"
-    vmm_server: "{{ scvmm_server }}"
-    state: present
-  register: result
+- hosts: windows
+  vars_files:
+    - vars/main.yml
 
-- name: Verify host was created
-  assert:
-    that:
-      - result is changed
-      - result.msg == "Host created"
+  tasks:
+    # Stage 1: Initial Run (create resource)
+    - name: Generate unique test name
+      set_fact:
+        test_host_name: "test-host-{{ 999999 | random }}"
 
-# Stage 2: Idempotency
-- name: Create same host again (idempotent)
-  scvmm_host:
-    name: "{{ test_host }}"
-    vmm_server: "{{ scvmm_server }}"
-    state: present
-  register: result
+    - name: Create resource
+      example_resource:
+        name: "{{ test_host_name }}"
+        api_endpoint: "{{ platform_endpoint }}"
+        state: present
+      register: result
 
-- name: Verify no change on second run
-  assert:
-    that:
-      - result is not changed
-      - result.msg == "Host already in desired state"
+    - name: Verify host was created
+      assert:
+        that:
+          - result is changed
+          - result.host is defined
+          - result.host.name == test_host_name
 
-# Stage 3: Check Mode
-- name: Test check mode
-  scvmm_host:
-    name: "{{ test_host_2 }}"
-    vmm_server: "{{ scvmm_server }}"
-    state: present
-  check_mode: yes
-  register: result
+    # Stage 2: Idempotency (no changes on repeat)
+    - name: Run same operation again
+      example_resource:
+        name: "{{ test_host_name }}"
+        api_endpoint: "{{ platform_endpoint }}"
+        state: present
+      register: result_idempotent
 
-- name: Verify check mode reports change
-  assert:
-    that:
-      - result is changed
+    - name: Verify no change on second run
+      assert:
+        that:
+          - result_idempotent is not changed
+          - result_idempotent.host.name == test_host_name
 
-- name: Verify host was NOT actually created
-  scvmm_host_info:
-    name: "{{ test_host_2 }}"
-    vmm_server: "{{ scvmm_server }}"
-  register: info
-  failed_when: info.exists == true
+    # Stage 3: Check Mode (dry-run, no actual changes)
+    - name: Test check mode (dry-run deletion)
+      example_resource:
+        name: "{{ test_host_name }}"
+        api_endpoint: "{{ platform_endpoint }}"
+        state: absent
+      check: true
+      register: result_check
 
-# Stage 4: Error Handling
-- name: Test invalid parameters
-  scvmm_host:
-    name: ""
-    vmm_server: "{{ scvmm_server }}"
-    state: present
-  register: result
-  ignore_errors: yes
+    - name: Verify check mode reports it would change
+      assert:
+        that:
+          - result_check is changed
 
-- name: Verify error message
-  assert:
-    that:
-      - result is failed
-      - "'name cannot be empty' in result.msg"
+    - name: Verify host still exists (check mode didn't actually delete)
+      example_resource:
+        name: "{{ test_host_name }}"
+        api_endpoint: "{{ platform_endpoint }}"
+        state: present
+      register: verify_still_exists
 
-# Cleanup
-- name: Remove test host
-  scvmm_host:
-    name: "{{ test_host }}"
-    vmm_server: "{{ scvmm_server }}"
-    state: absent
+    - name: Confirm resource still present
+      assert:
+        that:
+          - verify_still_exists is not changed
+
+    # Stage 4: Error Handling (invalid input produces clear error)
+    - name: Test invalid parameters
+      example_resource:
+        name: ""
+        api_endpoint: "{{ platform_endpoint }}"
+        state: present
+      register: result_error
+      failed_when: false
+
+    - name: Verify error message is clear
+      assert:
+        that:
+          - result_error is failed
+          - result_error.msg is defined
+          - "'name' in result_error.msg or 'empty' in result_error.msg"
+
+    # Cleanup (ALWAYS runs - critical for test isolation)
+    - name: Remove test host (cleanup)
+      example_resource:
+        name: "{{ test_host_name }}"
+        api_endpoint: "{{ platform_endpoint }}"
+        state: absent
+      register: cleanup
+
+    - name: Verify cleanup succeeded
+      assert:
+        that:
+          - cleanup is changed or cleanup is not changed
 ```
+
+**File 3**: `tests/integration/targets/<module_name>/vars/main.yml` (test variables)
+```yaml
+---
+platform_endpoint: "{{ lookup('env', 'PLATFORM_HOST') | default('platform.example.local') }}"
+```
+
+**Test Isolation Checklist**:
+- ✅ Uses ONLY example_resource module (no other modules called)
+- ✅ `meta/main.yml` has `dependencies: []`
+- ✅ Random unique names (`{{ 999999 | random }}`)
+- ✅ Cleans up test resources at end
+- ✅ Self-contained (can run standalone)
+- ✅ No assumptions about other tests running first
 
 ### Step 7: Documentation
 
@@ -348,19 +741,19 @@ Add proper Ansible documentation:
 ```python
 DOCUMENTATION = r'''
 ---
-module: scvmm_host
-short_description: Manage Hyper-V hosts in SCVMM
+module: example_resource
+short_description: Manage resources in Platform
 description:
-  - Add, remove, or configure Hyper-V hosts in System Center Virtual Machine Manager
-  - Requires SCVMM PowerShell module
+  - Add, remove, or configure resources in System Center Virtual Machine Manager
+  - Requires Platform PowerShell module
 version_added: "1.0.0"
 options:
   name:
-    description: Hostname or FQDN of Hyper-V host
+    description: Hostname or FQDN of resource
     required: true
     type: str
-  vmm_server:
-    description: SCVMM server to connect to
+  api_endpoint:
+    description: Platform server to connect to
     required: true
     type: str
   state:
@@ -372,23 +765,23 @@ author:
   - Generated by Jarvis Universal Ansible Collection Swarm
 requirements:
   - PowerShell module VirtualMachineManager
-  - SCVMM 2019 or later
+  - Platform 2019 or later
 notes:
-  - Requires WinRM connection to SCVMM server
+  - Requires WinRM connection to Platform server
   - Check mode supported
 '''
 
 EXAMPLES = r'''
-- name: Add Hyper-V host to SCVMM
-  scvmm_host:
+- name: Add resource to Platform
+  example_resource:
     name: hyperv01.domain.com
-    vmm_server: scvmm.domain.com
+    api_endpoint: example_collection.domain.com
     state: present
 
-- name: Remove host from SCVMM
-  scvmm_host:
+- name: Remove host from Platform
+  example_resource:
     name: hyperv01.domain.com
-    vmm_server: scvmm.domain.com
+    api_endpoint: example_collection.domain.com
     state: absent
 '''
 
@@ -501,6 +894,50 @@ ansible-test integration <module_name> --python 3.9 --check
 - Do NOT hardcode values (use module parameters)
 - Do NOT ignore check mode support
 
+## Learned Patterns (from production runs)
+
+### LESSON: Windows CLI Modules Under WinRM/SYSTEM Context (ACA-6275)
+
+When building modules that invoke CLI tools on Windows via WinRM, the process runs as SYSTEM. Many executables (winget, chocolatey, etc.) are NOT in the SYSTEM PATH because they are installed per-user or via AppX packages.
+
+**Pattern for resolving CLI tool paths under SYSTEM**:
+```powershell
+Function Find-ToolPath {
+    # 1. Try standard PATH
+    $cmd = Get-Command tool.exe -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+    
+    # 2. Check WindowsApps for AppX-installed tools
+    $appxPaths = Get-ChildItem "$env:ProgramFiles\WindowsApps\*tool*\tool.exe" -ErrorAction SilentlyContinue
+    if ($appxPaths) { return ($appxPaths | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName }
+    
+    # 3. Query AppxPackage for install location
+    $pkg = Get-AppxPackage -Name "*ToolPublisher*" -ErrorAction SilentlyContinue
+    if ($pkg) { return Join-Path $pkg.InstallLocation "tool.exe" }
+    
+    return $null
+}
+```
+
+Apply this pattern for any CLI tool that may not be in SYSTEM PATH.
+
+### LESSON: Documentation Format Detection (ACA-6275)
+
+Before creating module documentation, detect the collection's preferred format:
+- **Check for `.yml` files** in `plugins/modules/` alongside `.ps1` files (newer pattern)
+- **Check for `.py` files** with `DOCUMENTATION` string blocks (older pattern)
+- **Match the most recent additions** to the collection
+
+Example: ansible.windows uses `.yml` for newer modules like `win_winget.yml`, but `.py` for older ones like `win_package.py`.
+
+### LESSON: Package Management Test Prerequisites (ACA-6275)
+
+Package management modules need careful test setup:
+- Ensure package providers are registered (e.g., `Install-PackageProvider -Name NuGet`)
+- Trust repositories for non-interactive installs (e.g., `Set-PSRepository -InstallationPolicy Trusted`)
+- Use `block/always` pattern for cleanup to avoid test pollution
+- Test with small, well-known packages (not large apps that take minutes to install)
+
 ## Intelligence in Action
 
 **Unknown platform example**:
@@ -520,68 +957,30 @@ Agent process:
 
 This worker adapts to ANY platform through pattern recognition!
 
+---
+
 ## Learned Patterns (from production runs)
 
 This section is automatically maintained by insights-sync-specialist.
-Patterns captured from real production runs and applied here for future reference.
+Patterns are captured from real production runs and applied here for future reference.
 
 ### Platform: Windows-Winget-SYSTEM-Path
 winget.exe not in SYSTEM PATH under WinRM; resolve via Get-ChildItem "$env:ProgramFiles\WindowsApps\Microsoft.DesktopAppInstaller_*\winget.exe"
 
 *Source: Team insight from Hen Yaish*
 
-### Platform: Windows-PackageMgmt-NuGet
-NuGet via PackageManagement needs destination_path + filesystem fallback check; Get-Package alone misses custom-path installs
+### Platform: Windows-Package-Management-Providers
+PackageManagement (OneGet) supports NuGet, PowerShellGet, Chocolatey providers; use Get-PackageProvider to detect available providers, Install-PackageProvider to bootstrap
 
 *Source: Team insight from Hen Yaish*
 
-### Platform: Windows-PackageMgmt-PSGallery
-Set-PSRepository -Name PSGallery -InstallationPolicy Trusted before non-interactive PowerShellGet installs
-
-*Source: Team insight from Hen Yaish*
-
-### Platform: Windows-Doc-Format
-ansible.windows uses .yml doc files for newer modules (not .py DOCUMENTATION blocks); detect format before creating new modules
-
-*Source: Team insight from Hen Yaish*
-
-### Platform: Winget-MSIX-Access-Denied
-winget.exe exists but MSIX apps can throw Access Denied when executing under WinRM/SSH SYSTEM; must test execution (--version) not just file existence
-
-*Source: Team insight from Hen Yaish*
-
-### Platform: Winget-Execution-Check
-Integration tests must use ProcessStartInfo to verify winget can actually run, not just check if binary is on disk; catch Access Denied from MSIX sandbox
-
-*Source: Team insight from Hen Yaish*
-
-### Platform: Server2025-SSH-Timeout
-Windows Server 2025 SSH Key transport consistently times out in Azure CI after 50min; not a code issue, infrastructure flake on that specific transport
-
-*Source: Team insight from Hen Yaish*
-
-### Platform: PackageMgmt-No-CI-Regression
-win_package PackageManagement provider passed CI first try when properly isolated from auto-detection and manually validated; isolation pattern works
+### Platform: Windows-MSIX-Access-Denied
+MSIX package operations can fail with "Access Denied"; retry with elevated permissions or check AppX registration state
 
 *Source: Team insight from Hen Yaish*
 
 ### Pattern: Provider-Auto-Detection
 New providers with extra mandatory params MUST be excluded from auto-detection loops; use Where-Object filter on provider list
-
-*Source: Team insight from Hen Yaish*
-
-### Pattern: Required-If-Limitations
-Ansible required_if cannot condition on two params; move to manual validation in module body, preserve EXACT original error messages
-
-*Source: Team insight from Hen Yaish*
-
-### Pattern: Failure-Test-Regression
-When modifying module validation, always run FAILURE tests (not just success); existing tests assert on exact error message strings
-
-*Source: Team insight from Hen Yaish*
-
-### Pattern: Provider-Isolation
-Providers requiring explicit opt-in (extra params) must not participate in auto-detection; mirror the msix conditional exclusion pattern
 
 *Source: Team insight from Hen Yaish*
 
@@ -594,3 +993,56 @@ Never use $Error.Clear(), prefer try/catch over ErrorAction, use SilentlyContinu
 Use #AnsibleRequires not #Requires, import Ansible.Basic not Ansible.ModuleUtils.Legacy, no -Module flag, standardize imports
 
 *Source: Team insight from Hen Yaish*
+
+### Pattern: Idempotency-Check
+Always check current state before create/update operations to ensure idempotent behavior
+
+*Source: Team insight from Hen Yaish*
+
+### Pattern: Required-If-Limitations
+Ansible required_if cannot handle complex conditional validation; use manual validation with preserved error messages for backward compatibility
+
+*Source: Team insight from Hen Yaish*
+
+### RULE: Complementary Test Pattern — Action + Info Modules
+
+Action module tests MUST use the corresponding info module to verify state changes.
+Info module tests MUST use the corresponding action module to set up test data.
+
+```yaml
+# Action module test: use info module to verify
+- name: Create resource
+  <namespace>.<collection>.<module_name>:
+    name: "test-resource"
+    state: present
+
+- name: Verify via info module
+  <namespace>.<collection>.<module_name>_info:
+    name: "test-resource"
+  register: verify
+```
+
+This is the ONLY acceptable cross-module dependency — action↔info pairs complement each other.
+
+*Source: PR review learning*
+
+### RULE: No Runner Playbook
+
+Never combine multiple module tests into a single runner playbook. Each module test runs independently via `ansible-test integration <module_name>`.
+
+*Source: PR review learning*
+
+### RULE: Integration Test Must Be Playbook Format
+
+Each `main.yml` must include `hosts:`, `vars_files:`, and `tasks:` — it must be a complete playbook, not a bare task list.
+
+*Source: PR review learning*
+
+### RULE: Always Include tests/unit/.gitkeep
+
+ansible-test fails without the `tests/unit/` directory. Always create it:
+```bash
+mkdir -p tests/unit && touch tests/unit/.gitkeep
+```
+
+*Source: PR review learning*
