@@ -87,13 +87,6 @@ git reset HEAD galaxy.yml 2>/dev/null || true
 git reset HEAD CHANGELOG.rst 2>/dev/null || true
 git reset HEAD changelogs/changelog.yaml 2>/dev/null || true
 
-# Verify changelog fragments exist (required)
-if [ ! -d "changelogs/fragments" ] || [ -z "$(ls -A changelogs/fragments/*.yml 2>/dev/null)" ]; then
-  echo "❌ ERROR: No changelog fragments found!"
-  echo "   Every module MUST have a changelog fragment in changelogs/fragments/"
-  exit 1
-fi
-
 # Commit with quality message
 git commit -m "Complete Ansible collection: <namespace>.<name>
 
@@ -149,10 +142,9 @@ fi
    - ❌ NEVER modify `CHANGELOG.rst` (generated artifact)
    - 🔒 Maintainer controls release process
 
-3. **Changelog Fragments - ALWAYS REQUIRED**:
-   - ✅ ALWAYS create changelog fragment for EVERY new module
-   - ✅ ALWAYS create changelog fragment for EVERY enhancement to existing module
-   - ✅ ALWAYS create changelog fragment for EVERY bugfix
+3. **Changelog Fragments - ENHANCEMENTS/BUGFIXES ONLY** (PR #905):
+   - ✅ Create changelog fragment for EVERY enhancement to an existing module
+   - ✅ Create changelog fragment for EVERY bugfix to an existing module
    - 📝 Format: `changelogs/fragments/<epic-key>-<module-name>.yml`
 
 **What You MUST Do**:

@@ -910,7 +910,6 @@ Spawn release-specialist agent to handle git workflow and PR creation.
 - Code and tests committed to feature branch
 - If fork_pr mode: PR number in `project_context.yml`
 - ❌ **DO NOT expect**: version bumps or CHANGELOG.rst updates (maintainer controls these)
-- ❌ **DO NOT expect**: changelog fragments for brand-new modules
 
 ---
 

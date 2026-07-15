@@ -110,7 +110,6 @@ echo "   Enhanced modules: $ENHANCED_MODULES"
 ```
 
 **Changelog Fragment Rules** (CRITICAL):
-- ❌ **NEW modules**: Do NOT create a changelog fragment (release tooling auto-generates entries for new modules)
 - ✅ **ENHANCED modules / bugfixes**: Create changelog fragment in `changelogs/fragments/`
 - ❌ **NEVER modify**: `changelogs/changelog.yaml` (maintainer updates during release)
 - ❌ **NEVER modify**: `CHANGELOG.rst` (maintainer updates during release)

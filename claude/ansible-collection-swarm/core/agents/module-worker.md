@@ -574,6 +574,8 @@ Read `knowledge/patterns/python-unit-test-pattern.md` before writing unit tests.
 2. Mock external deps (HTTP, SDKs, subprocess) — do not call live systems in unit tests
 3. Cover: argument validation, happy path, idempotency decision, error paths
 
+**Risk gate**: If Python unit tests cannot be written, ask the user with an explicit risk statement and document any approved exception.
+
 #### Integration tests (all languages)
 
 **CRITICAL ISOLATION RULE**: Each module gets its OWN integration test with ZERO dependencies on other modules.

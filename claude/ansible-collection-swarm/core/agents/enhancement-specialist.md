@@ -133,8 +133,7 @@ echo "   New modules: $NEW_MODULES"
 echo "   Enhanced modules: $ENHANCED_MODULES"
 ```
 
-**Changelog Fragment Rules**:
-- ❌ **NEW modules**: Do NOT create a changelog fragment (release tooling auto-generates entries for new modules)
+**Changelog Fragment Rules** (CRITICAL — PR #905):
 - ✅ **ENHANCED modules / bugfixes**: Create changelog fragment in `changelogs/fragments/<epic-key>-<module-name>.yml`
 - ❌ **NEVER modify**: `changelogs/changelog.yaml`, `CHANGELOG.rst`, or `galaxy.yml` version
 
@@ -407,6 +406,28 @@ if ls plugins/modules/*.py >/dev/null 2>&1; then
 fi
 ```
 
+**Example for example_resource**:
+```bash
+test -f tests/unit/plugins/modules/test_example_resource.py
+ansible-test units --python 3.9 -- tests/unit/plugins/modules/test_example_resource.py
+```
+
+**RESPONSE HANDLING**:
+
+**IF unit test file is MISSING**:
+- Log: "❌ <module_name> missing unit tests (expected tests/unit/plugins/modules/test_<module_name>.py)"
+- **STOP and ask the user** with an explicit risk statement before proceeding
+
+**IF test PASSES** (exit code 0):
+- Log: "✅ <module_name> unit tests PASSED"
+- Move to next module
+
+**IF test FAILS** (exit code != 0):
+- Log: "❌ <module_name> unit tests FAILED"
+- **ANALYZE / FIX / RETRY** (max 3 attempts)
+- **IF still failing after 3 attempts** → Report failure and STOP
+
+**CRITICAL**: You MUST actually execute these commands.
 ---
 
 #### ACTION 3: Execute Integration Tests (WITH FIX-RETRY LOOP)

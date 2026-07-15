@@ -87,10 +87,6 @@ git reset HEAD galaxy.yml 2>/dev/null || true
 git reset HEAD CHANGELOG.rst 2>/dev/null || true
 git reset HEAD changelogs/changelog.yaml 2>/dev/null || true
 
-# Full-build modules are NEW — do NOT require changelog fragments (PR #905).
-# Fragments are only for enhancements/bugfixes to existing modules.
-# If any enhancement fragments were staged, keep them; otherwise proceed without.
-
 # Commit with quality message
 git commit -m "Complete Ansible collection: <namespace>.<name>
 
@@ -147,7 +143,6 @@ fi
    - 🔒 Maintainer controls release process
 
 3. **Changelog Fragments - ENHANCEMENTS/BUGFIXES ONLY**:
-   - ❌ Do NOT create changelog fragments for NEW modules (tooling auto-generates)
    - ✅ Create changelog fragment for EVERY enhancement to an existing module
    - ✅ Create changelog fragment for EVERY bugfix to an existing module
    - 📝 Format: `changelogs/fragments/<epic-key>-<module-name>.yml`

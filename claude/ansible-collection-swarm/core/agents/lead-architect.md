@@ -905,7 +905,7 @@ Spawn release-specialist agent to handle git workflow and PR creation.
 **Wait for**: Agent completion with PR created (or local delivery complete)
 
 **Verify**:
-- Changelog fragments created for all modules in `changelogs/fragments/`
+- Changelog fragments created only for enhanced/bugfixed existing modules in `changelogs/fragments/` (skip fragments for newly created modules — PR #905)
 - Code and tests committed to feature branch
 - If fork_pr mode: PR number in `project_context.yml`
 - ❌ **DO NOT expect**: version bumps or CHANGELOG.rst updates (maintainer controls these)
