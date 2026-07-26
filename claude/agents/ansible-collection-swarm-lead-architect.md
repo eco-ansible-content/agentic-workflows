@@ -905,7 +905,8 @@ Spawn release-specialist agent to handle git workflow and PR creation.
 **Wait for**: Agent completion with PR created (or local delivery complete)
 
 **Verify**:
-- Changelog fragments created for all modules in `changelogs/fragments/`
+- Changelog fragments created only for enhanced/bugfixed existing modules in `changelogs/fragments/` (skip fragments for newly created modules — PR #905)
+- Python modules include unit tests under `tests/unit/plugins/modules/` (unless user approved a documented risk exception)
 - Code and tests committed to feature branch
 - If fork_pr mode: PR number in `project_context.yml`
 - ❌ **DO NOT expect**: version bumps or CHANGELOG.rst updates (maintainer controls these)
@@ -1024,6 +1025,7 @@ You MUST sequentially trigger these agents in order:
 - Module specification from backlog
 - Platform characteristics (from prerequisites.md)
 - Test environment context (from project_context.yml)
+- **Python modules**: unit tests are mandatory (`tests/unit/plugins/modules/test_<module>.py`); if mocking risk is high, worker must ask the user before skipping
 
 ### Phase 5: QA
 
@@ -1037,6 +1039,7 @@ You MUST sequentially trigger these agents in order:
 
 **Responsibilities**:
 - Verify 4-stage testing loop (or adapted based on platform)
+- For Python modules: verify unit tests exist and `ansible-test units` passes (escalate risk to user if blocked)
 - Invoke peer review
 - Apply fixes autonomously
 - Track blocked modules in `blocked_modules.md` (if environment issues)

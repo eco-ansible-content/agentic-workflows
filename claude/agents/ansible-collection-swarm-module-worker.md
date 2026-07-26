@@ -589,6 +589,9 @@ tests/integration/targets/
     │   └── main.yml                 # dependencies: [] (ALWAYS EMPTY)
     └── defaults/
         └── main.yml                 # Default variables (optional)
+
+tests/unit/plugins/modules/   # Python modules only
+└── test_<module_name>.py
 ```
 
 **Action+Info Pair Rule**: When a module has a corresponding `_info` module, they share ONE test target named after the action module. The info module is used to **verify** the action module's work — the action module creates/modifies, the info module retrieves, and assertions compare the two.
@@ -903,6 +906,7 @@ Create in collection workspace:
 2. **Info module** (when applicable): `plugins/modules/<module_name>_info.<ext>`
 3. **Integration test** (shared): `tests/integration/targets/<module_name>/tasks/main.yml`
 4. **Test vars**: `tests/integration/targets/<module_name>/defaults/main.yml`
+5. **Unit test** (Python modules only): `tests/unit/plugins/modules/test_<module_name>.py`
 
 ## Success Criteria
 
@@ -911,7 +915,8 @@ Create in collection workspace:
 - ✅ Check mode supported
 - ✅ Error handling implemented
 - ✅ Documentation complete (DOCUMENTATION, EXAMPLES, RETURN)
-- ✅ Tests created (4-stage loop)
+- ✅ Integration tests created (4-stage loop)
+- ✅ Unit tests created for every Python module (unless user approved a documented risk exception)
 - ✅ Syntax validated
 
 ## Verification
@@ -922,6 +927,9 @@ ansible-test sanity <module_name> --python 3.9
 
 # Documentation check
 ansible-doc -t module <namespace>.<name>.<module_name>
+
+# Unit tests (Python modules — MANDATORY)
+ansible-test units --python 3.9
 
 # Integration test (dry run)
 ansible-test integration <module_name> --python 3.9 --check

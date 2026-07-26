@@ -97,6 +97,7 @@ fi
 - Code review by code-reviewer agent
 - Mark modules as `[!] CODE COMPLETE, TESTS BLOCKED`
 - Create `blocked_modules.md`
+- **Python modules**: Unit tests are still required even when integration is blocked (mocks do not need a live environment). If unit tests cannot be written, ask the user with risk before marking them blocked.
 
 ## Execution Process
 
@@ -263,7 +264,19 @@ dependencies: []  # ALWAYS EMPTY
 **Run Tests** (ONE module at a time):
 
 ```bash
-# Test example_resource ONLY
+# Python modules: unit tests FIRST (mandatory for all .py modules)
+if ls plugins/modules/*.py >/dev/null 2>&1; then
+  for module in $(ls -1 plugins/modules/*.py | xargs -n1 basename | sed 's/\.py$//' | grep -v '^__'); do
+    UNIT="tests/unit/plugins/modules/test_${module}.py"
+    if [ ! -f "$UNIT" ]; then
+      echo "❌ ERROR: Missing unit tests for Python module: $module"
+      exit 1
+    fi
+  done
+  ansible-test units --python 3.9 || exit 1
+fi
+
+# Test example_resource ONLY (integration)
 ansible-test integration example_resource --python 3.9 --inventory tests/inventory.winrm
 
 if [ $? -eq 0 ]; then

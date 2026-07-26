@@ -263,6 +263,11 @@ dependencies: []  # ALWAYS EMPTY
 **Run Tests** (ONE module at a time):
 
 ```bash
+# Python modules: unit tests FIRST (mandatory)
+if ls plugins/modules/*.py >/dev/null 2>&1; then
+  ansible-test units --python 3.9 || exit 1
+fi
+
 # Test example_resource ONLY
 ansible-test integration example_resource --python 3.9 --inventory tests/inventory.winrm
 

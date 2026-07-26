@@ -87,13 +87,6 @@ git reset HEAD galaxy.yml 2>/dev/null || true
 git reset HEAD CHANGELOG.rst 2>/dev/null || true
 git reset HEAD changelogs/changelog.yaml 2>/dev/null || true
 
-# Verify changelog fragments exist (required)
-if [ ! -d "changelogs/fragments" ] || [ -z "$(ls -A changelogs/fragments/*.yml 2>/dev/null)" ]; then
-  echo "❌ ERROR: No changelog fragments found!"
-  echo "   Every module MUST have a changelog fragment in changelogs/fragments/"
-  exit 1
-fi
-
 # Commit with quality message
 git commit -m "Complete Ansible collection: <namespace>.<name>
 
@@ -149,10 +142,9 @@ fi
    - ❌ NEVER modify `CHANGELOG.rst` (generated artifact)
    - 🔒 Maintainer controls release process
 
-3. **Changelog Fragments - ALWAYS REQUIRED**:
-   - ✅ ALWAYS create changelog fragment for EVERY new module
-   - ✅ ALWAYS create changelog fragment for EVERY enhancement to existing module
-   - ✅ ALWAYS create changelog fragment for EVERY bugfix
+3. **Changelog Fragments - ENHANCEMENTS/BUGFIXES ONLY** (PR #905):
+   - ✅ Create changelog fragment for EVERY enhancement to an existing module
+   - ✅ Create changelog fragment for EVERY bugfix to an existing module
    - 📝 Format: `changelogs/fragments/<epic-key>-<module-name>.yml`
 
 **What You MUST Do**:
@@ -177,68 +169,13 @@ git pull origin main
 BRANCH_NAME="add-modules-$(echo <EPIC-KEY> | tr '[:upper:]' '[:lower:]')"
 git checkout -b "$BRANCH_NAME"
 
-# 3. Create changelog fragments (REQUIRED for EVERY module)
-# This must happen BEFORE staging
-echo "📝 Creating changelog fragments..."
-
-# Read module list from backlog or detect from plugins/modules/
-MODULES=$(ls -1 plugins/modules/*.py 2>/dev/null | xargs -n1 basename | sed 's/\.py$//' | grep -v "^__")
-
-for module in $MODULES; do
-  FRAGMENT_FILE="changelogs/fragments/<EPIC-KEY>-${module}.yml"
-  
-  # Check if fragment already exists
-  if [ ! -f "$FRAGMENT_FILE" ]; then
-    # Determine fragment type (new module vs enhancement)
-    if git log --all --oneline -- "plugins/modules/${module}.py" 2>/dev/null | grep -q .; then
-      FRAGMENT_TYPE="minor_changes"  # Enhancement to existing module
-      FRAGMENT_DESC="Enhanced ${module} module with additional functionality"
-    else
-      FRAGMENT_TYPE="minor_changes"  # New module (use minor_changes, not major_changes)
-      FRAGMENT_DESC="Added ${module} module for <describe purpose>"
-    fi
-    
-    # Create fragment file
-    cat > "$FRAGMENT_FILE" <<EOF
----
-$FRAGMENT_TYPE:
-  - $FRAGMENT_DESC
-EOF
-    
-    echo "   ✅ Created: $FRAGMENT_FILE"
-  else
-    echo "   ⏭️  Fragment already exists: $FRAGMENT_FILE"
-  fi
-done
-
-# 4. Stage changes (code, tests, and fragments - NO planning docs, NO version files)
-git add plugins/modules/*.py plugins/modules/*.ps1 plugins/modules/*.yml
+# 3. Stage changes (only new/modified files)
+git add plugins/modules/*.py
 git add tests/integration/targets/*/
-git add changelogs/fragments/*.yml  # ALWAYS include fragments
+git add tests/unit/ 2>/dev/null || true
+git add docs/plans/module_backlog.md
 
-# Verify NO planning docs are staged
-git reset HEAD docs/plans/ 2>/dev/null || true
-
-# 🚨 CRITICAL: Verify NO version/changelog files are staged
-git reset HEAD galaxy.yml 2>/dev/null || true
-git reset HEAD CHANGELOG.rst 2>/dev/null || true  
-git reset HEAD changelogs/changelog.yaml 2>/dev/null || true
-
-# Verify fragments were staged
-FRAGMENT_COUNT=$(git diff --cached --name-only | grep "^changelogs/fragments/" | wc -l | tr -d ' ')
-if [ "$FRAGMENT_COUNT" -eq 0 ]; then
-  echo "❌ ERROR: No changelog fragments staged!"
-  echo "   Every module change MUST include a changelog fragment"
-  exit 1
-fi
-echo "✅ Changelog fragments staged: $FRAGMENT_COUNT"
-
-# Verify .gitignore excludes planning artifacts
-if ! grep -q "^docs/plans/" .gitignore 2>/dev/null; then
-  echo "⚠️  WARNING: .gitignore should exclude docs/plans/"
-fi
-
-# 5. Commit with quality message
+# 4. Commit with quality message
 git commit -m "Add modules from <EPIC-KEY>
 
 Modules added:
@@ -248,6 +185,7 @@ Changes:
 - Implemented <count> new modules
 - Added integration tests for all modules
 - Updated module backlog
+- Added unit tests for Python modules (when applicable)
 - All tests passing (new + regression)
 
 Epic: <EPIC-URL>
