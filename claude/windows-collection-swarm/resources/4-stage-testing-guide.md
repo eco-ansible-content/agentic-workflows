@@ -36,7 +36,7 @@ ansible-test integration <module_name> --python 3.9 --inventory tests/inventory.
 - Return values match documentation
 - Resource is in desired state
 
-**Example Test**:
+**Example Test** (action creates, info verifies):
 ```yaml
 - name: Create resource on first run
   namespace.collection.module_name:
@@ -44,12 +44,21 @@ ansible-test integration <module_name> --python 3.9 --inventory tests/inventory.
     state: present
   register: result
 
-- name: Verify creation succeeded
+- name: Verify action reports changed
   assert:
     that:
       - result is changed
-      - result.resource.name == "test_resource"
-      - result.resource.state == "present"
+
+- name: Retrieve resource with info module
+  namespace.collection.module_name_info:
+    name: test_resource
+  register: info
+
+- name: Verify info returns expected data
+  assert:
+    that:
+      - info.resource is defined
+      - info.resource.name == "test_resource"
 ```
 
 **Common Failures**:
@@ -83,7 +92,7 @@ ansible-test integration <module_name> --python 3.9 --inventory tests/inventory.
 - Resource state unchanged
 - No errors or warnings
 
-**Example Test**:
+**Example Test** (info confirms same state across runs):
 ```yaml
 - name: Create resource (first run)
   namespace.collection.module_name:
@@ -102,7 +111,16 @@ ansible-test integration <module_name> --python 3.9 --inventory tests/inventory.
     that:
       - first_run is changed
       - second_run is not changed
-      - second_run.resource.state == first_run.resource.state
+
+- name: Info module confirms unchanged state
+  namespace.collection.module_name_info:
+    name: test_resource
+  register: info_after_idempotent
+
+- name: Verify info returns same data
+  assert:
+    that:
+      - info_after_idempotent.resource.name == "test_resource"
 ```
 
 **Common Failures**:
