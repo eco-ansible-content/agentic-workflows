@@ -74,10 +74,19 @@ grep -r "Process\|HTTP\|[operation-type]" plugins/modules/
 grep -r "Start.*Process\|run_command" plugins/modules/
 ```
 
-**If utility exists → USE IT. Do NOT reimplement.**
+**If utility exists → YOU MUST USE IT. Do NOT reimplement.**
 
-Common collection utilities:
-- Process execution
+This is not just a research step — it is an implementation mandate. Every operation your module performs (result formatting, command execution, output building, error handling, etc.) MUST use the corresponding `module_utils` function if one exists. Manually reimplementing what a util already provides is a review failure.
+
+```bash
+# List ALL available utils and read their interfaces
+ls plugins/module_utils/
+cat plugins/module_utils/*.py  # or *.ps1 — understand what each provides
+```
+
+Common operations covered by collection utilities:
+- Process/command execution
+- Result formatting and output building
 - HTTP requests
 - JSON/YAML parsing
 - File operations
@@ -116,13 +125,15 @@ WebSearch("[tool] systemd API")
 WebSearch("[tool] D-Bus interface")
 ```
 
-**API Preference Order** (universal):
-1. Collection module_utils (checked above)
+**API Preference Order** (universal — higher wins, no skipping):
+1. Collection `module_utils` (checked above) ← **MANDATORY when available**
 2. Official SDK/library for [tool] in [language]
 3. Well-maintained third-party libraries
 4. Platform native APIs (COM/WMI/D-Bus/etc.)
 5. CLI with structured output (--json, --xml)
 6. CLI text parsing ← **LAST RESORT ONLY**
+
+If a `module_utils` function exists for what you are about to write, you MUST use it — even if your manual implementation would be simpler or shorter.
 
 #### 0.3: Check CLI Flags (if using CLI)
 
@@ -559,25 +570,31 @@ if __name__ == '__main__':
 
 ### Step 6: Implement Tests
 
-**CRITICAL ISOLATION RULE**: Each module gets its OWN integration test with ZERO dependencies on other modules.
+**CRITICAL ISOLATION RULE**: Each module (or action+info pair) gets its OWN integration test target with ZERO dependencies on other modules.
 
 **Test Structure** (MANDATORY):
 
 ```
+plugins/modules/
+├── <module_name>.<ext>              # Action module (create/update/delete)
+└── <module_name>_info.<ext>         # Info module (retrieve/list) — when applicable
+
 tests/integration/targets/
-└── <module_name>/           # ONE module ONLY
+└── <module_name>/                   # ONE target for the action+info pair
     ├── tasks/
-    │   └── main.yml         # MUST be a playbook (hosts:, vars_files:, tasks:)
+    │   └── main.yml                 # Tests BOTH action and info modules together
     ├── vars/
-    │   └── main.yml         # Test variables
+    │   └── main.yml                 # Test variables
     ├── meta/
-    │   └── main.yml         # dependencies: [] (ALWAYS EMPTY)
+    │   └── main.yml                 # dependencies: [] (ALWAYS EMPTY)
     └── defaults/
-        └── main.yml         # Default variables (optional)
+        └── main.yml                 # Default variables (optional)
 
 tests/unit/plugins/modules/   # Python modules only
 └── test_<module_name>.py
 ```
+
+**Action+Info Pair Rule**: When a module has a corresponding `_info` module, they share ONE test target named after the action module. The info module is used to **verify** the action module's work — the action module creates/modifies, the info module retrieves, and assertions compare the two.
 
 **Also ensure `tests/unit/.gitkeep` exists** — ansible-test fails without the `tests/unit/` directory:
 ```bash
@@ -600,7 +617,7 @@ dependencies:
   - other_module  # ❌ WRONG - creates coupling
 ```
 
-❌ **NEVER call other modules in your test**:
+❌ **NEVER call unrelated modules in your test**:
 ```yaml
 # tasks/main.yml for other_module test
 - name: Create host first
@@ -609,6 +626,8 @@ dependencies:
 ```
 
 **Why**: If example_resource is broken, your other_module test fails. Misleading cascade failures.
+
+✅ **Exception**: The paired `_info` module IS allowed (and expected) in the action module's test — it verifies the action module's work.
 
 ---
 
@@ -634,7 +653,7 @@ Create 4-stage test (adapted to platform):
     - vars/main.yml
 
   tasks:
-    # Stage 1: Initial Run (create resource)
+    # Stage 1: Initial Run — action creates, info verifies
     - name: Generate unique test name
       set_fact:
         test_host_name: "test-host-{{ 999999 | random }}"
@@ -646,14 +665,24 @@ Create 4-stage test (adapted to platform):
         state: present
       register: result
 
-    - name: Verify host was created
+    - name: Verify action module reports changed
       assert:
         that:
           - result is changed
-          - result.host is defined
-          - result.host.name == test_host_name
 
-    # Stage 2: Idempotency (no changes on repeat)
+    - name: Retrieve resource with info module
+      example_resource_info:
+        name: "{{ test_host_name }}"
+        api_endpoint: "{{ platform_endpoint }}"
+      register: info
+
+    - name: Verify info module returns expected data
+      assert:
+        that:
+          - info.resource is defined
+          - info.resource.name == test_host_name
+
+    # Stage 2: Idempotency — action reports no change, info confirms same state
     - name: Run same operation again
       example_resource:
         name: "{{ test_host_name }}"
@@ -665,15 +694,25 @@ Create 4-stage test (adapted to platform):
       assert:
         that:
           - result_idempotent is not changed
-          - result_idempotent.host.name == test_host_name
 
-    # Stage 3: Check Mode (dry-run, no actual changes)
+    - name: Info module confirms same state
+      example_resource_info:
+        name: "{{ test_host_name }}"
+        api_endpoint: "{{ platform_endpoint }}"
+      register: info_idempotent
+
+    - name: Verify info matches previous retrieval
+      assert:
+        that:
+          - info_idempotent.resource.name == test_host_name
+
+    # Stage 3: Check Mode — action reports would-change, info confirms nothing changed
     - name: Test check mode (dry-run deletion)
       example_resource:
         name: "{{ test_host_name }}"
         api_endpoint: "{{ platform_endpoint }}"
         state: absent
-      check: true
+      check_mode: true
       register: result_check
 
     - name: Verify check mode reports it would change
@@ -681,17 +720,17 @@ Create 4-stage test (adapted to platform):
         that:
           - result_check is changed
 
-    - name: Verify host still exists (check mode didn't actually delete)
-      example_resource:
+    - name: Info module confirms resource still exists (check mode didn't delete)
+      example_resource_info:
         name: "{{ test_host_name }}"
         api_endpoint: "{{ platform_endpoint }}"
-        state: present
-      register: verify_still_exists
+      register: info_check
 
-    - name: Confirm resource still present
+    - name: Verify resource is still present
       assert:
         that:
-          - verify_still_exists is not changed
+          - info_check.resource is defined
+          - info_check.resource.name == test_host_name
 
     # Stage 4: Error Handling (invalid input produces clear error)
     - name: Test invalid parameters
@@ -730,7 +769,8 @@ platform_endpoint: "{{ lookup('env', 'PLATFORM_HOST') | default('platform.exampl
 ```
 
 **Test Isolation Checklist**:
-- ✅ Uses ONLY example_resource module (no other modules called)
+- ✅ Uses ONLY example_resource and its paired example_resource_info (no unrelated modules)
+- ✅ Info module verifies action module's work at each stage
 - ✅ `meta/main.yml` has `dependencies: []`
 - ✅ Random unique names (`{{ 999999 | random }}`)
 - ✅ Cleans up test resources at end
@@ -862,10 +902,11 @@ Based on characteristics from `prerequisites.md`:
 
 Create in collection workspace:
 
-1. **Module file**: `plugins/modules/<module_name>.<ext>`
-2. **Integration test**: `tests/integration/targets/<module_name>/tasks/main.yml`
-3. **Test vars**: `tests/integration/targets/<module_name>/defaults/main.yml`
-4. **Unit test** (Python modules only): `tests/unit/plugins/modules/test_<module_name>.py`
+1. **Action module**: `plugins/modules/<module_name>.<ext>`
+2. **Info module** (when applicable): `plugins/modules/<module_name>_info.<ext>`
+3. **Integration test** (shared): `tests/integration/targets/<module_name>/tasks/main.yml`
+4. **Test vars**: `tests/integration/targets/<module_name>/defaults/main.yml`
+5. **Unit test** (Python modules only): `tests/unit/plugins/modules/test_<module_name>.py`
 
 ## Success Criteria
 

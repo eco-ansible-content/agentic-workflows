@@ -206,7 +206,7 @@ cat "plugins/modules/$SAMPLE_MODULE"
 - Naming: example_collection_<resource> (e.g., example_collection_host, example_collection_vm)
 - Module structure: AnsibleModule spec, Import VirtualMachineManager, Get-Compare-Set pattern
 - Documentation: Ansible standard (DOCUMENTATION, EXAMPLES, RETURN)
-- Tests: 4-stage loop in tests/integration/targets/<module>/
+- Tests: 4-stage loop in tests/integration/targets/<module>/ (action+info pair shares one target)
 
 **Code Style**:
 - Idempotency: Get-* → Compare → New-*/Set-* if different

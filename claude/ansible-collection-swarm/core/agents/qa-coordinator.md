@@ -132,16 +132,16 @@ ansible_winrm_server_cert_validation=ignore
 
 ```
 tests/integration/targets/
-├── example_resource/           # ONE module ONLY
+├── example_resource/                # Action+info pair shares ONE target
 │   ├── tasks/
-│   │   └── main.yml      # Tests ONLY example_resource
+│   │   └── main.yml                 # Tests BOTH example_resource AND example_resource_info
 │   └── meta/
-│       └── main.yml      # dependencies: [] (EMPTY)
-├── other_module/             # DIFFERENT module
+│       └── main.yml                 # dependencies: [] (EMPTY)
+├── other_module/                    # Standalone module (no info pair)
 │   ├── tasks/
-│   │   └── main.yml      # Tests ONLY other_module
+│   │   └── main.yml                 # Tests ONLY other_module
 │   └── meta/
-│       └── main.yml      # dependencies: [] (EMPTY)
+│       └── main.yml                 # dependencies: [] (EMPTY)
 ```
 
 **FORBIDDEN Patterns** (These create stupid cross-dependencies):
@@ -365,11 +365,12 @@ ansible-test integration example_resource --python 3.9
   - Check: No assumed flags/features
   - Action: Grep for `$env:`, `os.environ`, `export` and verify each
 
-- [ ] **Uses Collection Utilities**: Not reinventing the wheel
-  - Check: Uses `module_utils` functions, not raw language primitives
+- [ ] **Uses Collection Utilities EVERYWHERE**: Not reinventing the wheel
+  - Check: Uses `module_utils` functions for EVERY operation where a util exists — result formatting, command execution, output building, error handling, everything
+  - ❌ Bad: Manually building result dicts when a `module_utils` formatter exists
   - ❌ Bad: `System.Diagnostics.Process`, `subprocess.Popen` directly
-  - ✅ Good: `Start-AnsibleWindowsProcess`, `module.run_command()`
-  - Action: Grep for low-level primitives, verify justified
+  - ✅ Good: Imports and calls `module_utils` functions for all covered operations
+  - Action: `ls plugins/module_utils/` → read each util → grep module code for manual reimplementations of what those utils provide → REJECT if found
 
 - [ ] **Uses Language-Appropriate APIs**: Not parsing text
   - Check: Uses SDK/library/module, not CLI text parsing
@@ -434,14 +435,12 @@ ansible-test integration example_resource --python 3.9
 
 ## Learned Patterns (from PR reviews)
 
-### RULE: Complementary Test Pattern — Action + Info Modules Must Cross-Validate
+### RULE: Action + Info Pair — ONE Shared Test Target
 
-**Action module** integration tests MUST use the corresponding **info module** to query and validate data after state changes.
-
-**Info module** integration tests MUST use the corresponding **action module** to create the testing environment to query from.
+Action and info modules share **one** test target directory named after the action module. The test exercises both: the action module creates/modifies state, the info module retrieves and validates it.
 
 ```yaml
-# ✅ CORRECT: Action module test uses info module to verify
+# ✅ CORRECT: Single test target for the pair
 # tests/integration/targets/<module_name>/tasks/main.yml
 ---
 - hosts: "{{ target_host_group }}"
@@ -449,6 +448,7 @@ ansible-test integration example_resource --python 3.9
     - vars/main.yml
 
   tasks:
+    # Stage 1: Action creates, info verifies
     - name: Create resource
       <namespace>.<collection>.<module_name>:
         name: "test-resource"
@@ -460,39 +460,43 @@ ansible-test integration example_resource --python 3.9
         name: "test-resource"
       register: info_result
 
-    - name: Assert resource was created correctly
+    - name: Assert info returns expected data
       assert:
         that:
           - info_result.resources | length == 1
           - info_result.resources[0].name == "test-resource"
-```
 
-```yaml
-# ✅ CORRECT: Info module test uses action module to set up data
-# tests/integration/targets/<module_name>_info/tasks/main.yml
----
-- hosts: "{{ target_host_group }}"
-  vars_files:
-    - vars/main.yml
-
-  tasks:
-    - name: Set up test data using action module
+    # Stage 2: Idempotency — info confirms same state
+    - name: Run action again (idempotent)
       <namespace>.<collection>.<module_name>:
-        name: "test-resource-for-info"
+        name: "test-resource"
         state: present
+      register: idempotent_result
 
-    - name: Query using info module
-      <namespace>.<collection>.<module_name>_info:
-        name: "test-resource-for-info"
-      register: result
-
-    - name: Validate info output
+    - name: Verify no change
       assert:
         that:
-          - result.resources is defined
+          - idempotent_result is not changed
+
+    # Stage 3: Check mode — info confirms nothing changed
+    - name: Check mode deletion
+      <namespace>.<collection>.<module_name>:
+        name: "test-resource"
+        state: absent
+      check_mode: true
+
+    - name: Info confirms resource still exists
+      <namespace>.<collection>.<module_name>_info:
+        name: "test-resource"
+      register: still_exists
+
+    - name: Assert resource survived check mode
+      assert:
+        that:
+          - still_exists.resources | length == 1
 ```
 
-**This is the ONLY acceptable cross-module dependency in tests** — action↔info pairs are complementary by design.
+The info module is the **only** cross-module call allowed in a test — action↔info pairs are complementary by design.
 
 *Source: PR review — "action modules integration test should use the info module to query and validate data"*
 
