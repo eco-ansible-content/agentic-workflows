@@ -1,6 +1,6 @@
 {
   "name": "@eco-ansible-content/agentic-workflows",
-  "version": "0.0.34",
+  "version": "0.0.35",
   "description": "Agentic Workflows - Autonomous multi-agent workflows for building Ansible collections",
   "main": "index.js",
   "scripts": {
@@ -32,9 +32,9 @@
   "homepage": "https://github.com/eco-ansible-content/agentic-workflows#readme",
   "claudePlugin": {
     "name": "agentic-workflows",
-    "version": "0.0.34",
+    "version": "0.0.35",
     "skills": {
-      "ansible-epic-analysis": "skills/ansible-epic-analysis.md"
+      "ansible-epic-analysis": "skills/ansible-epic-analysis/SKILL.md"
     },
     "swarms": {
       "ansible-collection-swarm": {
