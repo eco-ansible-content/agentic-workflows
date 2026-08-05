@@ -217,9 +217,16 @@ End with:
 
 ### Recommendations
 
-- <Actionable recommendation for each incomplete pair — what to create, what API supports it, what ticket to add it to>
-- <Overall status summary — e.g., "All other pairs are complete and ready for implementation">
+- <For each incomplete pair: state whether creating the missing module is feasible and list the specific cmdlet/API commands that support it. Example: "scvmm_job action module — feasible. Supported by `Stop-SCJob` and `Restart-SCJob` cmdlets.">
+- <If a missing module has no API support: "scvmm_example action module — not feasible. No create/update/delete API found.">
+- <Overall status: "N of M pairs are complete and ready for implementation.">
 ```
+
+**Recommendations rules**:
+- Do NOT ask the user questions or suggest they "consider" anything
+- State feasibility as a fact: "feasible" or "not feasible"
+- Always name the specific cmdlet/API commands that support the missing module
+- Keep each recommendation to one line
 
 ## Error Handling
 
