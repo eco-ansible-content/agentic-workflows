@@ -368,17 +368,42 @@ ansible-test integration example_resource --python 3.9
   - ✅ Good: Isolated test, self-contained, no cross-dependencies
   - Action: Verify test structure follows isolation pattern
 
+- [ ] **Full Cmdlet/API Coverage**: Module implements ALL cmdlets/APIs from the Jira ticket — no skipped functionality
+  - Check: Read the Jira ticket (from `module_backlog.md` or research findings) and list every cmdlet/API endpoint specified
+  - Check: Grep the module source code for each cmdlet/API — every single one MUST appear
+  - Check: Every parameter exposed by the cmdlet/API that is relevant to the module's purpose MUST be implemented as a module parameter
+  - ❌ Bad: Ticket says `New-SCCustomProperty, Set-SCCustomProperty, Remove-SCCustomProperty` but module only implements `New-` and `Remove-`
+  - ❌ Bad: Cmdlet has 6 parameters but module only exposes 3
+  - ✅ Good: Every cmdlet from the ticket is used, every relevant parameter is exposed
+  - Action: Cross-reference ticket cmdlets vs module code → REJECT if any cmdlet is missing or any parameter is skipped without documented justification
+
+- [ ] **Integration Test Completeness**: Tests exercise ALL module functionality with real use cases — no shortcuts
+  - Check: Every module parameter is tested at least once (not just `name` and `state`)
+  - Check: Every state transition is tested (`present` → verify → `absent` → verify, plus updates if supported)
+  - Check: Tests use realistic values and actual use cases, not placeholder/minimal inputs
+  - Check: If module supports filtering/querying (info modules), test with filters, test with no filters, test empty results
+  - Check: If module supports update operations, test creating → updating specific fields → verifying the update took effect
+  - ❌ Bad: Test only creates and deletes with `name` parameter, ignoring `description`, `applies_to`, etc.
+  - ❌ Bad: Info module test only calls the module once with no parameters
+  - ❌ Bad: Test uses empty strings or dummy values that wouldn't exist in a real environment
+  - ✅ Good: Test creates with all parameters, updates a subset, queries with filters, verifies each field in the response
+  - Action: List every module parameter → verify each appears in at least one test task → REJECT if parameters are untested
+
 - [ ] **No AI Hallucinations**: All features/APIs verified in official documentation
   - Check: No environment variables without doc link in comments
   - Check: No assumed flags/features
   - Action: Grep for `$env:`, `os.environ`, `export` and verify each
 
-- [ ] **Uses Collection Utilities EVERYWHERE**: Not reinventing the wheel
-  - Check: Uses `module_utils` functions for EVERY operation where a util exists — result formatting, command execution, output building, error handling, everything
+- [ ] **Uses Collection Utilities EVERYWHERE**: Not reinventing the wheel — zero tolerance
+  - Check: `ls plugins/module_utils/` → read EVERY util file → catalog every function/class it exposes
+  - Check: For EACH function in module_utils, grep ALL module source files for manual reimplementations of the same logic
+  - Check: Verify the module `import`s and calls the util — not just that it doesn't reimplement, but that it actively USES the util
   - ❌ Bad: Manually building result dicts when a `module_utils` formatter exists
-  - ❌ Bad: `System.Diagnostics.Process`, `subprocess.Popen` directly
-  - ✅ Good: Imports and calls `module_utils` functions for all covered operations
-  - Action: `ls plugins/module_utils/` → read each util → grep module code for manual reimplementations of what those utils provide → REJECT if found
+  - ❌ Bad: `System.Diagnostics.Process`, `subprocess.Popen` directly when a command runner util exists
+  - ❌ Bad: Module has `import` for util but never calls its functions (dead import)
+  - ❌ Bad: Module formats output manually when `format_result()` or similar exists in utils
+  - ✅ Good: Every operation that has a util counterpart uses the util — result formatting, command execution, error handling, output building
+  - Action: `ls plugins/module_utils/` → `cat` each util → list its functions → grep each module for patterns that duplicate those functions → REJECT if any manual reimplementation found
 
 - [ ] **Uses Language-Appropriate APIs**: Not parsing text
   - Check: Uses SDK/library/module, not CLI text parsing

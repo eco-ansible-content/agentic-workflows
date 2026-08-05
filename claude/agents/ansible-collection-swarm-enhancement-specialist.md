@@ -502,9 +502,38 @@ Only if these fail → investigate if your new modules broke something.
 
 ---
 
+#### PRE-DELIVERY VALIDATION (MANDATORY — run BEFORE verification checklist)
+
+**These three checks catch the issues that most commonly require post-swarm rework. Run them NOW, fix anything that fails, THEN proceed to the verification checklist.**
+
+□ **Full Cmdlet/API Coverage** — No skipped functionality
+  - Read the Jira ticket for each new module (from `module_backlog.md` or research findings)
+  - List every cmdlet/API endpoint the ticket specifies
+  - Grep each module's source code for each cmdlet/API — every single one MUST appear
+  - Verify every relevant parameter from the cmdlet/API is exposed as a module parameter
+  - **If any cmdlet is missing or any parameter is skipped → FIX before proceeding**
+
+□ **Integration Test Completeness** — Real use cases, no shortcuts
+  - List every parameter in each module's argument spec
+  - Verify each parameter appears in at least one integration test task
+  - Verify tests include: create with ALL parameters, update specific fields, query with filters (info modules), verify return values
+  - Tests must use realistic values on a real VM — not placeholder/minimal inputs
+  - **If any parameter is untested or tests only cover basic create/delete → FIX before proceeding**
+
+□ **module_utils Usage** — Zero tolerance for reimplementation
+  - `ls plugins/module_utils/` → read each util → catalog its functions
+  - For each new module, verify it imports and calls every relevant util function
+  - Grep for patterns that manually reimplement what utils already provide (result formatting, command execution, output building, error handling)
+  - **If any manual reimplementation found → REPLACE with util call before proceeding**
+
+---
+
 #### VERIFICATION CHECKLIST (Before Proceeding to Step 7)
 
 **YOU MUST verify ALL of these before moving to Step 7:**
+
+□ **Pre-Delivery Validation Passed**
+  - [ ] All three pre-delivery checks above completed and passed
 
 □ **Test Execution Confirmed**
   - [ ] Actually ran `ansible-test integration` commands (not just read about them)

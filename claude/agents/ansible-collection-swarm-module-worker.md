@@ -918,6 +918,63 @@ Create in collection workspace:
 - ✅ Integration tests created (4-stage loop)
 - ✅ Unit tests created for every Python module (unless user approved a documented risk exception)
 - ✅ Syntax validated
+- ✅ All cmdlets/APIs from Jira ticket implemented (see self-validation below)
+- ✅ Integration tests cover every parameter (see self-validation below)
+- ✅ All available module_utils used (see self-validation below)
+
+## Self-Validation (MANDATORY before reporting completion)
+
+**Run these three checks BEFORE reporting the module as complete. If any fails, fix it — do NOT hand off to QA with known gaps.**
+
+### Check 1: Full Cmdlet/API Coverage
+
+```bash
+# 1. Read your Jira ticket specification (from module_backlog.md or research_findings)
+# 2. List every cmdlet/API endpoint the ticket specifies
+# 3. Grep your module source for each one
+grep -n "New-SC\|Set-SC\|Remove-SC\|Get-SC" plugins/modules/<module_name>.ps1
+# Or for Python:
+grep -n "def \|requests\.\|client\." plugins/modules/<module_name>.py
+```
+
+**For each cmdlet/API in the ticket**: verify it appears in your module code. If the ticket says the module wraps `New-X`, `Set-X`, and `Remove-X`, ALL THREE must be in your code.
+
+**For each cmdlet's parameters**: verify you expose every relevant parameter. If `New-SCCustomProperty` accepts `-Name`, `-Description`, `-AddMember` → your module must have `name`, `description`, and `member` parameters (or documented justification for omission).
+
+### Check 2: Integration Test Completeness
+
+```bash
+# List every parameter in your argument spec
+grep -E "type.*=|required.*=" plugins/modules/<module_name>.ps1
+# Or for Python:
+grep -E "type=|required=" plugins/modules/<module_name>.py
+
+# Verify each parameter appears in integration test
+grep -c "<param_name>" tests/integration/targets/<module_name>/tasks/main.yml
+```
+
+**Every module parameter must be tested at least once** in the integration tests. Not just `name` and `state` — test `description`, `applies_to`, filters, update scenarios, etc.
+
+**Test real use cases**:
+- Create with ALL parameters populated
+- Update specific fields and verify the change
+- Query/filter (info modules) with different filter combinations
+- Verify return values contain all documented fields
+
+### Check 3: module_utils Usage
+
+```bash
+# List all available utils
+ls plugins/module_utils/
+
+# Read each util to understand what it provides
+cat plugins/module_utils/*.py  # or *.ps1
+
+# Verify your module imports and uses them
+grep -n "module_utils\|import.*util" plugins/modules/<module_name>.*
+```
+
+**If a util function exists for ANY operation your module performs** (result formatting, command execution, output building, error handling) — you MUST use it. Grep your module for patterns that duplicate util functions and replace them.
 
 ## Verification
 
