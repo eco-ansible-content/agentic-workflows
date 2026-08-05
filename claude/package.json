@@ -33,6 +33,9 @@
   "claudePlugin": {
     "name": "agentic-workflows",
     "version": "0.0.33",
+    "skills": {
+      "ansible-epic-analysis": "skills/ansible-epic-analysis.md"
+    },
     "swarms": {
       "ansible-collection-swarm": {
         "description": "Universal Ansible Collection Swarm - Works for ANY platform",
