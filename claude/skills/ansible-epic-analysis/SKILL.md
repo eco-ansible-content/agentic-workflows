@@ -206,34 +206,9 @@ Complete pairs: <N> | Incomplete pairs: <N>
 - `Found in <EPIC-XXX>` — counterpart found in a sibling Epic (append to Missing status)
 - `Standalone` — utility module, no info counterpart expected
 
-If sibling Epics were searched, add:
-
-```markdown
----
-
-### Sibling Epic Search
-
-Parent: <ANSTRAT-KEY> — <parent summary>
-Sibling Epics searched: <N>
-
-| Sibling Epic | Summary | Relevant Tickets Found |
-|-------------|---------|----------------------|
-| EPIC-999 | Network modules | ACA-1238 (example_net_info) |
-| EPIC-1000 | Storage modules | None relevant |
-```
-
-If API feasibility checks were performed, add:
-
-```markdown
----
-
-### API/Cmdlet Feasibility
-
-| Missing Module | Type | Research Result | Source |
-|---------------|------|-----------------|--------|
-| example_vm_info | Info | `Get-SCVirtualMachine` available | Microsoft Docs |
-| example_cloud_info | Info | No read endpoint found | Web search |
-```
+Do NOT print a full sibling Epic table. The sibling search happens behind the scenes — only surface results that matter:
+- If a missing pair WAS found in a sibling Epic, note it in the main table's Status column as `Found in <EPIC-XXX>` and in the ticket column as `<TICKET-KEY> (in <EPIC-KEY>)`.
+- If nothing was found, do NOT print a "Sibling Epic Search" section at all — just proceed to recommendations.
 
 End with:
 
@@ -242,7 +217,8 @@ End with:
 
 ### Recommendations
 
-- <Actionable recommendation based on findings — e.g., "Create info module tickets for X, Y" or "Verify API support for Z before creating tickets">
+- <Actionable recommendation for each incomplete pair — what to create, what API supports it, what ticket to add it to>
+- <Overall status summary — e.g., "All other pairs are complete and ready for implementation">
 ```
 
 ## Error Handling
