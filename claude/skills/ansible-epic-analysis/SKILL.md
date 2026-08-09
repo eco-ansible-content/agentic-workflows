@@ -1,11 +1,11 @@
 ---
 name: ansible-epic-analysis
-description: Analyze a Jira Epic for action/info module pairs, find missing pairs in sibling Epics, and check API/cmdlet feasibility
+description: Analyze a Jira Epic for action/info module pairs, find missing pairs in sibling Epics, and check API feasibility. Works on any platform — Windows, cloud, network, SaaS.
 ---
 
 # Ansible Epic Analysis
 
-Performs a read-only pre-build analysis of a Jira Epic (or ANSTRAT). Identifies all requested modules, maps action+info pairs, finds missing counterparts in sibling Epics, and checks whether the platform API supports the missing operations.
+Performs a read-only pre-build analysis of a Jira Epic (or ANSTRAT). Identifies all requested modules, maps action+info pairs, finds missing counterparts in sibling Epics, and checks whether the platform API supports the missing operations. Platform-agnostic — works for any Ansible collection regardless of target platform.
 
 ## Usage
 
@@ -88,7 +88,7 @@ INFO keywords (read/list/query a resource):
 - info, information, get, list, query, retrieve, fetch, show, read, discover, facts, gather
 
 **3. Base name extraction**:
-- Extract the resource name from the ticket summary (e.g., "Create SCVMM host management module" → `scvmm_host`)
+- Extract the resource name from the ticket summary (e.g., "Create host management module" → `<prefix>_host`)
 - Normalize to `snake_case`
 - Strip `_info` suffix if present
 - Group tickets by base name
@@ -133,39 +133,88 @@ For each incomplete pair (missing action or info ticket):
 5. If no parent reference is found in the Epic output, skip this step and report:
    > Could not determine parent ANSTRAT/Initiative for this Epic. Sibling Epic search was skipped.
 
-### Step 6: API/Cmdlet Feasibility Check
+### Step 6: API Feasibility Check
 
 For each pair that is STILL incomplete after the sibling search, research whether the platform API supports the missing operation.
 
 **Determine what is missing**:
-- Missing INFO module → search for read/list/query API support
+- Missing INFO module → search for read/list/query/get API support
 - Missing ACTION module → search for create/update/delete API support
 
-**Search strategy** (based on platform type inferred from the Epic):
+**Detect the platform type** from the Epic description, ticket summaries, and module name prefixes. Use signals like:
+
+| Signal | Platform type |
+|--------|--------------|
+| Module prefix `scvmm_`, `ad_`, `win_`, `exchange_` or mentions PowerShell/cmdlets | Windows/PowerShell |
+| Module prefix `ec2_`, `s3_`, `aws_`, `lambda_` or mentions AWS/boto3 | AWS SDK |
+| Module prefix `azure_rm_`, `azure_` or mentions Azure | Azure SDK/REST |
+| Module prefix `gcp_`, `gce_` or mentions Google Cloud | GCP REST/SDK |
+| Module prefix `ios_`, `nxos_`, `eos_`, `junos_`, `vyos_` or mentions network devices | Network CLI |
+| Module prefix `meraki_`, `aci_`, `mso_`, `nsx_` or mentions network API | Network REST API |
+| Module prefix `vmware_`, `vcenter_` or mentions vSphere/ESXi | VMware SDK (pyVmomi/REST) |
+| Module prefix `k8s_`, `helm_` or mentions Kubernetes | Kubernetes API |
+| Module prefix `splunk_`, `snow_`, `pagerduty_`, `datadog_` or mentions SaaS | SaaS REST API |
+| No clear signal | Default to REST API search |
+
+**Search strategy by platform type:**
 
 For **Windows/PowerShell** platforms:
 ```
-WebSearch("<platform-name> Get-<ResourceName> PowerShell cmdlet")
-WebSearch("<platform-name> PowerShell cmdlets list")
+WebSearch("<platform-name> <ResourceName> PowerShell cmdlets site:learn.microsoft.com")
 ```
 Look for `Get-*` cmdlets (info) or `New-*/Set-*/Remove-*` cmdlets (action).
 
-For **REST API** platforms:
+For **AWS** (boto3 SDK):
 ```
-WebSearch("<platform-name> REST API <resource-name> endpoints")
-WebSearch("<platform-name> API reference <resource-name>")
+WebSearch("boto3 <service> <resource-type> methods site:boto3.amazonaws.com")
 ```
-Look for `GET` endpoints (info) or `POST/PUT/DELETE` endpoints (action).
+Look for `describe_*`/`list_*` methods (info) or `create_*`/`update_*`/`delete_*` methods (action).
 
-For **CLI-based** platforms:
+For **Azure** (SDK/REST):
 ```
-WebSearch("<platform-name> CLI commands <resource-name>")
+WebSearch("azure <resource-type> REST API reference site:learn.microsoft.com")
 ```
-Look for `show`/`display` commands (info) or `configure`/`set` commands (action).
+Look for `GET` endpoints (info) or `PUT`/`PATCH`/`DELETE` endpoints (action).
+
+For **GCP** (REST/SDK):
+```
+WebSearch("google cloud <resource-type> API reference site:cloud.google.com")
+```
+Look for `get`/`list` methods (info) or `insert`/`update`/`delete` methods (action).
+
+For **Network CLI** platforms:
+```
+WebSearch("<platform-name> <resource-type> CLI command reference")
+```
+Look for `show`/`display` commands (info) or `configure`/`set`/`no` commands (action).
+
+For **Network REST API** platforms:
+```
+WebSearch("<platform-name> <resource-type> API reference")
+```
+Look for `GET` endpoints (info) or `POST`/`PUT`/`DELETE` endpoints (action).
+
+For **VMware** (vSphere):
+```
+WebSearch("vsphere <resource-type> API reference pyVmomi")
+```
+Look for `vim.<Type>` managed objects and their methods.
+
+For **SaaS/REST** platforms:
+```
+WebSearch("<platform-name> <resource-type> API reference")
+```
+Look for `GET` endpoints (info) or `POST`/`PUT`/`PATCH`/`DELETE` endpoints (action).
+
+For **Kubernetes**:
+```
+WebSearch("kubernetes <resource-type> API reference site:kubernetes.io")
+```
+Look for `get`/`list` verbs (info) or `create`/`update`/`patch`/`delete` verbs (action).
 
 **Report one of**:
-- `Supported` — name the specific cmdlet/endpoint found (e.g., `Get-SCVMHost`)
-- `Not found` — no matching API/cmdlet discovered
+- `Supported` — name the specific cmdlet, endpoint, or SDK method found (e.g., `Get-SCVMHost`, `ec2:DescribeInstances`, `GET /api/v1/namespaces`)
+- `Not found` — no matching API operation discovered
 - `Inconclusive` — manual verification recommended
 
 ### Step 7: Print Output
@@ -189,13 +238,13 @@ Total tickets analyzed: <N>
 Action modules: <N> | Info modules: <N>
 Complete pairs: <N> | Incomplete pairs: <N>
 
-| # | Base Name | Action Module | Info Module | Action Ticket | Info Ticket | API/Cmdlet Support | Status |
-|---|-----------|---------------|-------------|---------------|-------------|--------------------|--------|
-| 1 | example_host | example_host | example_host_info | ACA-1234 | ACA-1235 | — | Complete |
-| 2 | example_vm | example_vm | example_vm_info | ACA-1236 | — | `Get-SCVirtualMachine` | Missing Info (API Available) |
-| 3 | example_net | — | example_net_info | — | ACA-1238 (in EPIC-999) | `New-SCLogicalNetwork` | Missing Action (Found in EPIC-999) |
-| 4 | example_cloud | example_cloud | — | ACA-1240 | — | Not found | Missing Info (No API) |
-| 5 | example_util | example_util | — | ACA-1242 | — | — | Standalone |
+| # | Base Name | Action Module | Info Module | Action Ticket | Info Ticket | API Support | Status |
+|---|-----------|---------------|-------------|---------------|-------------|-------------|--------|
+| 1 | <prefix>_host | <prefix>_host | <prefix>_host_info | XXX-1234 | XXX-1235 | — | Complete |
+| 2 | <prefix>_vm | <prefix>_vm | <prefix>_vm_info | XXX-1236 | — | `<read operation>` | Missing Info (API Available) |
+| 3 | <prefix>_net | — | <prefix>_net_info | — | XXX-1238 (in EPIC-999) | `<create operation>` | Missing Action (Found in EPIC-999) |
+| 4 | <prefix>_cloud | <prefix>_cloud | — | XXX-1240 | — | Not found | Missing Info (No API) |
+| 5 | <prefix>_util | <prefix>_util | — | XXX-1242 | — | — | Standalone |
 ```
 
 **Status values**:
@@ -217,8 +266,12 @@ End with:
 
 ### Recommendations
 
-- <For each incomplete pair: state whether creating the missing module is feasible and list the specific cmdlet/API commands that support it. Example: "scvmm_job action module — feasible. Supported by `Stop-SCJob` and `Restart-SCJob` cmdlets.">
-- <If a missing module has no API support: "scvmm_example action module — not feasible. No create/update/delete API found.">
+- <For each incomplete pair: state whether creating the missing module is feasible and name the specific API operations that support it>
+  - Cmdlet example: "<prefix>_job action module — feasible. Supported by `Stop-SCJob` and `Restart-SCJob` cmdlets."
+  - SDK example: "<prefix>_bucket_info module — feasible. Supported by `s3:ListBuckets` and `s3:GetBucketPolicy`."
+  - REST example: "<prefix>_rule action module — feasible. Supported by `POST /api/v2/rules` and `DELETE /api/v2/rules/{id}`."
+  - CLI example: "<prefix>_vlan action module — feasible. Supported by `vlan <id>` and `no vlan <id>` configuration commands."
+- <If a missing module has no API support: "<prefix>_example action module — not feasible. No create/update/delete API found.">
 - <Overall status: "N of M pairs are complete and ready for implementation.">
 ```
 
