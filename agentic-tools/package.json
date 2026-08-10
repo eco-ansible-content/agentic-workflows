@@ -1,0 +1,37 @@
+{
+  "name": "@eco-ansible-content/agentic-tools",
+  "version": "0.0.1",
+  "description": "Agentic Tools - Standalone analysis and audit tools for Ansible collections",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eco-ansible-content/agentic-workflows.git"
+  },
+  "keywords": [
+    "ansible",
+    "collections",
+    "analysis",
+    "audit",
+    "epic",
+    "module-quality",
+    "claude-code",
+    "claude-plugin"
+  ],
+  "author": "Hyaish <hyaish@redhat.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/eco-ansible-content/agentic-workflows/issues"
+  },
+  "homepage": "https://github.com/eco-ansible-content/agentic-workflows#readme",
+  "claudePlugin": {
+    "name": "agentic-tools",
+    "version": "0.0.1",
+    "skills": {
+      "ansible-epic-analysis": "skills/ansible-epic-analysis/SKILL.md",
+      "ansible-module-audit": "skills/ansible-module-audit/SKILL.md"
+    }
+  }
+}

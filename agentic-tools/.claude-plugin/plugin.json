@@ -1,0 +1,11 @@
+{
+  "name": "agentic-tools",
+  "version": "0.0.1",
+  "description": "Standalone analysis and audit tools for Ansible collections",
+  "author": {
+    "name": "Eco Ansible Content"
+  },
+  "repository": "https://github.com/eco-ansible-content/agentic-workflows",
+  "homepage": "https://github.com/eco-ansible-content/agentic-workflows",
+  "license": "MIT"
+}
