@@ -10,7 +10,7 @@
       "name": "agentic-workflows",
       "source": "./claude",
       "description": "Universal Ansible Collection Swarm - builds ANY Ansible collection from Jira Epics through intelligent research and pattern matching",
-      "version": "0.0.39",
+      "version": "0.0.40",
       "author": {
         "name": "Eco Ansible Content"
       }
