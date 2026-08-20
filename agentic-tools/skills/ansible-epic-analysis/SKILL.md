@@ -26,28 +26,59 @@ The argument is a Jira ticket key — an Epic, ANSTRAT, or even a single Task (w
 
 Follow these steps exactly when this skill is invoked. Do NOT ask the user any clarifying questions about ticket content — research autonomously.
 
+### Step 0: Detect Jira CLI Binary
+
+Before running any Jira commands, resolve which CLI binary to use. Check in this order and use the first one found:
+
+1. `jira-rh` — preferred Red Hat CLI
+2. `which jira` — standard `jira` on PATH
+3. Common binary directories — scan well-known locations for a `jira` executable
+
+```bash
+if command -v jira-rh &>/dev/null; then
+  JIRA_CMD="jira-rh"
+elif JIRA_PATH=$(which jira 2>/dev/null) && [ -x "$JIRA_PATH" ]; then
+  JIRA_CMD="$JIRA_PATH"
+else
+  JIRA_CMD=""
+  for dir in /usr/bin /usr/local/bin /usr/local/sbin /home/bin "$HOME/bin" "$HOME/.local/bin"; do
+    if [ -x "$dir/jira" ]; then
+      JIRA_CMD="$dir/jira"
+      break
+    fi
+  done
+  if [ -z "$JIRA_CMD" ]; then
+    echo "ERROR: No Jira CLI found (tried jira-rh, jira, common bin paths). Install one and retry."
+    exit 1
+  fi
+fi
+echo "Using Jira CLI: $JIRA_CMD"
+```
+
+Use `$JIRA_CMD` in place of `jira-rh` for every command in this skill.
+
 ### Step 1: Parse Input and Detect Ticket Type
 
 Extract the Jira ticket key from the user's message (pattern: `[A-Z]+-\d+`).
 
 ```bash
-jira-rh issue <TICKET-KEY>
+$JIRA_CMD issue <TICKET-KEY>
 ```
 
-**DO NOT use Atlassian MCP** — use `jira-rh` CLI only.
+**DO NOT use Atlassian MCP** — use `$JIRA_CMD` CLI only.
 
 Read the `Type:` field from the output and branch:
 
 - **Epic** → this is the target Epic. Proceed to Step 2.
 - **ANSTRAT or Initiative** → this IS the parent scope. Parse `Child Issues:` / `Child Epics:` from the output to get all Epic keys. Analyze ALL Epics combined. Skip Step 5 (sibling search) since all Epics are already in scope.
-- **Task or Story** → look for `Parent:` or `Epic Link:` in the output to find the parent Epic key. Run `jira-rh issue <PARENT-EPIC-KEY>` and use that as the target Epic.
+- **Task or Story** → look for `Parent:` or `Epic Link:` in the output to find the parent Epic key. Run `$JIRA_CMD issue <PARENT-EPIC-KEY>` and use that as the target Epic.
 
 ### Step 2: Read the Epic and All Child Tickets
 
 Fetch the Epic details:
 
 ```bash
-jira-rh issue <EPIC-KEY>
+$JIRA_CMD issue <EPIC-KEY>
 ```
 
 From the output, parse the `Subtasks:` or `Issues in Epic:` section to collect all child ticket keys.
@@ -55,7 +86,7 @@ From the output, parse the `Subtasks:` or `Issues in Epic:` section to collect a
 For each child ticket:
 
 ```bash
-jira-rh issue <CHILD-KEY>
+$JIRA_CMD issue <CHILD-KEY>
 ```
 
 Collect from each ticket: key, summary, description, status.
@@ -106,7 +137,7 @@ After classification, build a pairs table: for each base name, note whether the 
 
 For each incomplete pair (missing action or info ticket):
 
-1. From the target Epic's `jira-rh` output, look for a parent reference. Check these fields in order:
+1. From the target Epic's `$JIRA_CMD` output, look for a parent reference. Check these fields in order:
    - `Parent:`
    - `Epic Link:`
    - `Initiative:`
@@ -114,7 +145,7 @@ For each incomplete pair (missing action or info ticket):
 
 2. If a parent key is found:
    ```bash
-   jira-rh issue <PARENT-KEY>
+   $JIRA_CMD issue <PARENT-KEY>
    ```
    Parse `Child Issues:` / `Child Epics:` to get all sibling Epic keys (excluding the target Epic).
 
@@ -122,11 +153,11 @@ For each incomplete pair (missing action or info ticket):
 
 4. For relevant sibling Epics:
    ```bash
-   jira-rh issue <SIBLING-EPIC-KEY>
+   $JIRA_CMD issue <SIBLING-EPIC-KEY>
    ```
    Parse its child tickets. For each child ticket:
    ```bash
-   jira-rh issue <TICKET-KEY>
+   $JIRA_CMD issue <TICKET-KEY>
    ```
    Apply the same pair-detection logic from Step 4. Check if any ticket matches a missing base name.
 
@@ -283,14 +314,15 @@ End with:
 
 ## Error Handling
 
-- **jira-rh command fails**: Report the error and suggest checking `jira-rh config` credentials.
+- **No Jira CLI found**: Report the error from Step 0 and stop — do not proceed. Common paths searched: `/usr/bin`, `/usr/local/bin`, `/usr/local/sbin`, `/home/bin`, `~/bin`, `~/.local/bin`.
+- **$JIRA_CMD command fails**: Report the error and suggest checking credentials (`jira-rh config` or `$JIRA_CMD config`).
 - **No parent found for Epic**: Skip sibling search, report clearly.
 - **No child tickets in Epic**: Report "Epic has no child tickets" and stop.
 - **ANSTRAT with many Epics (10+)**: Process all but log progress ("Analyzing Epic 3 of 12...").
 
 ## Important Rules
 
-- Use `jira-rh issue <KEY>` for ALL Jira access — **NEVER** use Atlassian MCP
+- Use `$JIRA_CMD issue <KEY>` for ALL Jira access — **NEVER** use Atlassian MCP
 - **Print** output to conversation — do NOT save to files
 - Do NOT ask the user clarifying questions about ticket content — research autonomously
 - This is a **read-only** analysis — do not modify any files or create artifacts
