@@ -1,6 +1,6 @@
 {
   "name": "@eco-ansible-content/agentic-tools",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Agentic Tools - Standalone analysis and audit tools for Ansible collections",
   "main": "index.js",
   "scripts": {
@@ -28,7 +28,7 @@
   "homepage": "https://github.com/eco-ansible-content/agentic-workflows#readme",
   "claudePlugin": {
     "name": "agentic-tools",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "skills": {
       "ansible-epic-analysis": "skills/ansible-epic-analysis/SKILL.md",
       "ansible-module-audit": "skills/ansible-module-audit/SKILL.md"

@@ -1,7 +1,7 @@
 {
   "name": "agentic-tools",
   "description": "Standalone analysis and audit tools for Ansible collections",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "owner": {
     "name": "Eco Ansible Content",
     "email": "hyaish@redhat.com",
@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "agentic-tools",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "description": "Standalone analysis and audit tools for Ansible collections. Epic analysis and module quality auditing.",
       "source": ".",
       "author": {
