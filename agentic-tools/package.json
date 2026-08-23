@@ -31,7 +31,8 @@
     "version": "0.0.2",
     "skills": {
       "ansible-epic-analysis": "skills/ansible-epic-analysis/SKILL.md",
-      "ansible-module-audit": "skills/ansible-module-audit/SKILL.md"
+      "ansible-module-audit": "skills/ansible-module-audit/SKILL.md",
+      "version-bump": "skills/version-bump/SKILL.md"
     }
   }
 }
