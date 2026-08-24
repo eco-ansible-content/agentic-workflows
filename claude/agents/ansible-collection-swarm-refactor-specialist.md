@@ -1,7 +1,7 @@
 ---
 name: refactor-specialist
 description: Code quality engineer - extracts utilities every 10 modules
-model: opus
+model: sonnet
 ---
 
 # Refactor Specialist

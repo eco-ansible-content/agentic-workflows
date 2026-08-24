@@ -20,422 +20,113 @@ collection_location: <path to collection>
 ```
 
 From `docs/plans/PROJECT_BRIEF.md` (if exists - READ FIRST):
-- Custom delivery requirements
-- Certification checklist
-- Definition of done
+- Custom delivery requirements, certification checklist, definition of done
 
 ### Check for Custom Delivery Instructions (FIRST STEP)
 
-**Before starting delivery audit**, check if custom analysis exists:
+Before the delivery audit, if `docs/plans/PROJECT_BRIEF.md` exists, read it FULLY and extract delivery-relevant sections:
+- "Definition of Done" → success criteria / required checks
+- "Testing Requirements" → final validation steps
+- "Known Constraints" → delivery limitations
+- "Custom Execution Steps" → additional delivery operations
 
-```bash
-if [ -f "docs/plans/PROJECT_BRIEF.md" ]; then
-  echo "📋 Custom project brief found - reading delivery requirements..."
-  # Extract delivery-specific requirements
-fi
-```
-
-**If PROJECT_BRIEF.md exists**:
-1. Read the FULL file before proceeding
-2. Extract sections relevant to delivery:
-   - "Definition of Done" → Success criteria, required checks
-   - "Testing Requirements" → Final validation steps
-   - "Known Constraints" → Delivery limitations
-   - "Custom Execution Steps" → Additional delivery operations
-3. **Custom requirements ADD TO the four-pillar audit**
-4. If brief specifies certification requirements → Add to checklist
-5. If brief mentions additional validation → Execute before delivery
-
-**Examples of custom additions**:
-- Brief says "Unit test coverage >80% required" → Add coverage check to audit
-- Brief says "MUST certify for Red Hat Automation Hub" → Add certification step
-- Brief says "Definition of Done: X, Y, Z" → Verify each criterion
-- Brief says "NEVER push to main without PR" → Enforce PR workflow
-
-**Custom delivery requirements EXTEND the four-pillar audit** (not replace).
+Custom requirements **ADD TO** the four-pillar audit (never replace it). Examples: coverage >80% → add coverage check; "MUST certify for Automation Hub" → add certification step; "NEVER push to main without PR" → enforce PR workflow.
 
 ## Pre-Delivery Audit (Always Run)
 
 **Four-Pillar Check**:
 1. **Completeness** - All modules implemented (check module_backlog.md)
-2. **Quality** - All tests pass (check test results)
+2. **Quality** - All tests pass
 3. **Consistency** - Naming conventions followed
-4. **Deliverability** - Collection builds with `ansible-galaxy collection build`
+4. **Deliverability** - Builds with `ansible-galaxy collection build`
 
-If audit fails → Report issues to lead-architect, DO NOT deliver.
+If audit fails → report to lead-architect, DO NOT deliver.
 
 ---
 
 ## Workflow 1: New Project (Full Build)
 
 **When**: `workflow_mode == "full_build"`
-
 **Location**: `~/agentic-workflow-collections/<namespace>/<name>/`
+**Philosophy**: Complete control over a temporary autonomous workspace. Push directly to main — no branches, no PRs, no ceremony.
 
-**Philosophy**: You have complete control. This is a temporary workspace for autonomous builds. Push directly to main - no branches, no PRs, no ceremony.
+### Git Operations (Autonomous) — functional spec
 
-### Git Operations (Autonomous)
-
-```bash
-cd ~/agentic-workflow-collections/<namespace>/<name>
-
-# Stage all changes EXCEPT version/changelog files
-git add .
-
-# 🚨 CRITICAL: Unstage version/changelog files (maintainer controls these)
-git reset HEAD galaxy.yml 2>/dev/null || true
-git reset HEAD CHANGELOG.rst 2>/dev/null || true
-git reset HEAD changelogs/changelog.yaml 2>/dev/null || true
-
-# Commit with quality message
-git commit -m "Complete Ansible collection: <namespace>.<name>
-
-Implemented from Jira Epic: <EPIC-KEY>
-
-Modules:
-<list modules implemented>
-
-Testing:
-- All integration tests passing
-- Test environment: <test env details>
-
-Agentic Workflows Build: $(date +%Y-%m-%d)"
-
-# Push directly to main (if git delivery)
-if [ "$DELIVERY_TARGET" == "git" ]; then
-  git remote add origin <git_url>
-  git push -u origin main
-fi
-```
+1. In the collection dir, stage all changes EXCEPT version/changelog files.
+2. 🚨 CRITICAL: unstage `galaxy.yml`, `CHANGELOG.rst`, `changelogs/changelog.yaml` (maintainer controls these).
+3. Commit with a quality message: title `Complete Ansible collection: <namespace>.<name>`, body listing the Jira epic key, modules implemented, and testing/test-env details.
+4. If `delivery.target == "git"`: add `origin <git_url>` and `git push -u origin main`.
 
 **Rules**:
-- ✅ Push directly to main (no branch needed)
-- ✅ Force decisions autonomously
-- ✅ You own this workspace completely
-- ❌ Don't destroy test environment
-- ❌ Don't force push (use regular push)
+- ✅ Push directly to main (no branch); force decisions autonomously; you own this workspace.
+- ❌ Don't destroy the test environment; don't force push (regular push only).
 
-**Why**: This workspace exists ONLY for autonomous builds. It's temporary storage before user reviews and moves to production.
+**Why**: This workspace exists ONLY for autonomous builds — temporary storage before the user reviews and moves to production.
 
 ---
 
 ## Workflow 2: Enhancement (Existing Project)
 
 **When**: `workflow_mode == "enhancement"`
-
 **Location**: User's cloned repository (detected in Phase 0)
+**Philosophy**: Collaborative work on a real repo. Proper git flow — branch, commit, push to fork, open PR. Other agents (code review, CI) validate via the PR.
 
-**Philosophy**: This is collaborative work on a real repository. Use proper git workflow - branch, commit, push to fork, create PR. Other agents (code review, CI) will validate via PR process.
+### 🚨 CRITICAL: Versioning and Changelog Rules (ALL MODES)
 
-### 🚨 CRITICAL: Versioning and Changelog Rules
+1. **Version bumps — NEVER**: NEVER bump version in `galaxy.yml`; NEVER modify `galaxy.yml` for any reason. Maintainer controls all versioning.
+2. **Changelog generation — NEVER**: NEVER run `antsibull-changelog release`; NEVER modify `changelogs/changelog.yaml` (generated artifact); NEVER modify `CHANGELOG.rst` (generated artifact). Maintainer controls the release process.
+3. **Changelog fragments — ENHANCEMENTS/BUGFIXES ONLY**: create a fragment for EVERY enhancement or bugfix to an *existing* module. Format: `changelogs/fragments/<epic-key>-<module-name>.yml`. Do NOT create fragments for brand-new modules.
 
-**UNIVERSAL RULES (ALL MODES)**:
+**Learned from**: PR #905 (skip fragments for new modules; no version bump or changelog generation); PR #907 (version bump wrongly included).
 
-1. **Version Bumps - NEVER ALLOWED**:
-   - ❌ NEVER bump version in `galaxy.yml` (maintainer does this during release)
-   - ❌ NEVER modify `galaxy.yml` for any reason
-   - 🔒 Maintainer controls all versioning
+### Git Operations (Collaborative) — functional spec
 
-2. **Changelog Generation - NEVER ALLOWED**:
-   - ❌ NEVER run `antsibull-changelog release`
-   - ❌ NEVER modify `changelogs/changelog.yaml` (generated artifact)
-   - ❌ NEVER modify `CHANGELOG.rst` (generated artifact)
-   - 🔒 Maintainer controls release process
-
-3. **Changelog Fragments - ENHANCEMENTS/BUGFIXES ONLY**:
-   - ✅ Create changelog fragment for EVERY enhancement to an existing module
-   - ✅ Create changelog fragment for EVERY bugfix to an existing module
-   - 📝 Format: `changelogs/fragments/<epic-key>-<module-name>.yml`
-
-**What You MUST Do**:
-- ✅ Create changelog fragments (fragments/*.yml) only for enhanced/bugfixed existing modules
-- ✅ Commit code changes, tests, and (when applicable) fragments
-- ✅ Let maintainers control versioning and release generation
-
-**Learned from**: 
-- PR #905 review - skip fragments for new modules; no version bump or changelog generation
-- PR #907 issue - version bump included when it shouldn't have been
-
-### Git Operations (Collaborative)
-
-```bash
-cd <collection_location>
-
-# 1. Ensure main is up to date
-git checkout main
-git pull origin main
-
-# 2. Create feature branch
-BRANCH_NAME="add-modules-$(echo <EPIC-KEY> | tr '[:upper:]' '[:lower:]')"
-git checkout -b "$BRANCH_NAME"
-
-# 3. Create changelog fragments (enhancements/bugfixes only)
-# This must happen BEFORE staging
-echo "📝 Creating changelog fragments..."
-
-# Prefer backlog lists when available
-if [ -f /tmp/enhanced_modules.txt ]; then
-  ENHANCED_LIST=$(cat /tmp/enhanced_modules.txt)
-else
-  ENHANCED_LIST=""
-fi
-
-# Collect module basenames from .py, .ps1, and .yml module files
-MODULES=$(
-  { ls -1 plugins/modules/*.py plugins/modules/*.ps1 plugins/modules/*.yml 2>/dev/null || true; } \
-    | xargs -n1 basename 2>/dev/null \
-    | sed -E 's/\.(py|ps1|yml)$//' \
-    | grep -v '^__' \
-    | sort -u
-)
-
-for module in $MODULES; do
-  FRAGMENT_FILE="changelogs/fragments/<EPIC-KEY>-${module}.yml"
-
-  # Prefer backlog: only create for enhancement status
-  if [ -n "$ENHANCED_LIST" ]; then
-    echo "$ENHANCED_LIST" | grep -qw "$module" || {
-      echo "   ⏭️  Skip fragment (new module): $module"
-      continue
-    }
-  else
-    # Fallback: existing if git history exists for any module extension
-    IS_EXISTING=false
-    for ext in py ps1 yml; do
-      if git log --all --oneline -- "plugins/modules/${module}.${ext}" 2>/dev/null | grep -q .; then
-        IS_EXISTING=true
-        break
-      fi
-    done
-    if [ "$IS_EXISTING" != "true" ]; then
-      echo "   ⏭️  Skip fragment (new module): $module"
-      continue
-    fi
-  fi
-
-  if [ ! -f "$FRAGMENT_FILE" ]; then
-    FRAGMENT_TYPE="minor_changes"
-    FRAGMENT_DESC="Enhanced ${module} module with additional functionality"
-    cat > "$FRAGMENT_FILE" <<EOF
----
-$FRAGMENT_TYPE:
-  - $FRAGMENT_DESC
-EOF
-    echo "   ✅ Created: $FRAGMENT_FILE"
-  else
-    echo "   ⏭️  Fragment already exists: $FRAGMENT_FILE"
-  fi
-done
-
-# 4. Stage changes (code, tests, and fragments - NO planning docs, NO version files)
-git add plugins/modules/*.py plugins/modules/*.ps1 plugins/modules/*.yml
-git add tests/integration/targets/*/
-git add tests/unit/
-git add changelogs/fragments/*.yml
-
-# Verify NO planning docs are staged
-git reset HEAD docs/plans/ 2>/dev/null || true
-
-# 🚨 CRITICAL: Verify NO version/changelog files are staged
-git reset HEAD galaxy.yml 2>/dev/null || true
-git reset HEAD CHANGELOG.rst 2>/dev/null || true  
-git reset HEAD changelogs/changelog.yaml 2>/dev/null || true
-
-# Fragments required ONLY when enhanced/bugfix modules are in scope
-FRAGMENT_COUNT=$(git diff --cached --name-only | grep "^changelogs/fragments/" | wc -l | tr -d ' ')
-if [ -n "$ENHANCED_LIST" ] && [ -n "$(echo $ENHANCED_LIST | tr -d '[:space:]')" ]; then
-  if [ "$FRAGMENT_COUNT" -eq 0 ]; then
-    echo "❌ ERROR: Enhanced/bugfix modules present but no changelog fragments staged!"
-    echo "   Create fragments only for enhanced/bugfixed existing modules"
-    exit 1
-  fi
-  echo "✅ Changelog fragments staged: $FRAGMENT_COUNT"
-else
-  echo "ℹ️  No enhanced modules in scope — fragments not required (new modules only)"
-fi
-
-# Verify .gitignore excludes planning artifacts
-if ! grep -q "^docs/plans/" .gitignore 2>/dev/null; then
-  echo "⚠️  WARNING: .gitignore should exclude docs/plans/"
-fi
-
-# 5. Commit with quality message
-git commit -m "Add modules from <EPIC-KEY>
-
-Modules added:
-<list new modules>
-
-Changes:
-- Implemented <count> new modules
-- Added integration tests for all modules
-- Updated module backlog
-- All tests passing (new + regression)
-
-Epic: <EPIC-URL>
-Test environment: <test env>
-
-Agentic Workflows Build"
-
-# 6. Push to fork (NOT origin)
-# Detect fork remote (usually 'fork' or username)
-FORK_REMOTE=$(git remote -v | grep -E "fork|$(git config user.name)" | head -1 | awk '{print $1}')
-
-if [ -z "$FORK_REMOTE" ]; then
-  echo "ERROR: No fork remote found. Expected 'fork' remote configured."
-  echo "User should run: git remote add fork <their-fork-url>"
-  exit 1
-fi
-
-git push "$FORK_REMOTE" "$BRANCH_NAME"
-
-# 7. Create Pull Request (use gh CLI with structured format)
-if command -v gh &> /dev/null; then
-  # Determine PR type based on module type
-  if grep -q "status: enhancement" docs/plans/module_backlog.md 2>/dev/null; then
-    ISSUE_TYPE="Feature Pull Request"
-  else
-    ISSUE_TYPE="New Module Pull Request"
-  fi
-  
-  # ⚠️  IMPORTANT: Fill out ALL placeholders in the template:
-  # - <module_name>: The actual module name (e.g., "win_winget")
-  # - <high-level description>: Brief purpose (e.g., "Windows Package Manager (winget) support")
-  # - Purpose/Functionality/Architecture/Error Handling/Validation: Complete each bullet
-  # - <namespace>.<collection>.<module_name>: Full module path (e.g., "ansible.windows.win_winget")
-  # - <EPIC-KEY>: Jira epic reference (e.g., "ACA-6275")
-  #
-  # DO NOT leave placeholder text like "<What problem does this solve?>" in the final PR
-  
-  # 🚨 CRITICAL: Always target upstream repo, not fork
-  # Use --repo to target upstream, --head with fork prefix
-  UPSTREAM_REPO=$(git remote get-url origin | sed 's|.*github.com[:/]||;s|\.git$||')
-  FORK_USER=$(git remote get-url "$FORK_REMOTE" | sed 's|.*github.com[:/]||;s|/.*||')
-  
-  gh pr create \
-    --repo "$UPSTREAM_REPO" \
-    --title "feat: add <module_name> module" \
-    --body "$(cat <<'PRBODY'
-##### SUMMARY
-Adds <module_name> module for <high-level description>.
-
-**Design & Implementation:**
-- **Purpose:** <What problem does this solve? What capability does it add?>
-- **Functionality:** <What operations/states/parameters does the module support?>
-- **Architecture:** <How is it implemented? PowerShell/.ps1 + Python/.py split? API pattern?>
-- **Error Handling:** <How does it handle failures, edge cases, or invalid inputs?>
-- **Validation:** <What tests validate the functionality? Idempotency? Check mode?>
-
-##### ISSUE TYPE
-- $ISSUE_TYPE
-
-##### COMPONENT NAME
-- <namespace>.<collection>.<module_name>
-
-##### ADDITIONAL INFORMATION
-<EPIC-KEY>
-PRBODY
-)" \
-    --base main \
-    --head "$FORK_USER:$BRANCH_NAME"
-else
-  # No gh CLI - output manual PR instructions
-  echo ""
-  echo "✅ Branch pushed to fork: $FORK_REMOTE/$BRANCH_NAME"
-  echo ""
-  echo "📝 Create PR manually:"
-  echo "  Base: main"
-  echo "  Head: $FORK_REMOTE:$BRANCH_NAME"
-  echo "  Title: Add modules from <EPIC-KEY>"
-  echo ""
-fi
-```
+1. **Update main**: `git checkout main && git pull origin main`.
+2. **Fresh feature branch** off main: `BRANCH_NAME="add-modules-<epic-key lowercased>"`; `git checkout -b "$BRANCH_NAME"`.
+3. **Create changelog fragments (enhanced/bugfix existing modules ONLY, before staging)**:
+   - Determine enhanced modules: prefer `/tmp/enhanced_modules.txt`; else fall back to modules with prior git history (`.py`/`.ps1`/`.yml` under `plugins/modules/`).
+   - Skip any new module (no history / not in enhanced list).
+   - For each qualifying module, if `changelogs/fragments/<EPIC-KEY>-<module>.yml` is absent, write it with `minor_changes: ["Enhanced <module> module with additional functionality"]`.
+4. **Stage** code + tests + fragments only: `plugins/modules/*.{py,ps1,yml}`, `tests/integration/targets/*/`, `tests/unit/`, `changelogs/fragments/*.yml`.
+5. **Unstage** what must never ship: `docs/plans/` (planning docs), and 🚨 `galaxy.yml`, `CHANGELOG.rst`, `changelogs/changelog.yaml`.
+6. **Fragment gate**: if enhanced/bugfix modules are in scope but zero fragments are staged → ERROR and abort. If new modules only → fragments not required. Warn if `.gitignore` doesn't exclude `docs/plans/`.
+7. **Commit** with quality message: title `Add modules from <EPIC-KEY>`, body listing new modules, change summary, epic URL, and test environment. (No Claude attribution — see RULE below.)
+8. **Push to fork, NOT origin**: detect the fork remote (named `fork` or matching `git config user.name`). If none found → ERROR instructing the user to run `git remote add fork <their-fork-url>`, then abort. Otherwise `git push "$FORK_REMOTE" "$BRANCH_NAME"`.
+9. **Create PR against upstream** (if `gh` available):
+   - Derive `UPSTREAM_REPO` from `origin` URL and `FORK_USER` from the fork remote URL.
+   - Pick issue type: `Feature Pull Request` if backlog shows `status: enhancement`, else `New Module Pull Request`.
+   - Run: `gh pr create --repo "$UPSTREAM_REPO" --base main --head "$FORK_USER:$BRANCH_NAME" --title "feat: add <module_name> module" --body "<template>"`.
+   - Body uses the canonical PR template (see "RULE: PR Description Must Follow Repo Template"). Fill ALL placeholders (`<module_name>`, purpose/functionality/architecture/error-handling/validation, `<namespace>.<collection>.<module_name>`, `<EPIC-KEY>`) — never leave placeholder text.
+   - If `gh` is absent, print manual PR instructions (base `main`, head `$FORK_REMOTE:$BRANCH_NAME`, title `Add modules from <EPIC-KEY>`).
 
 **Rules**:
-- ✅ MUST update main before branching
-- ✅ MUST use feature branch (never commit to main)
-- ✅ MUST push to fork (never push to origin)
-- ✅ MUST create PR (auto via `gh` or manual instructions)
-- ✅ Quality commit message (explain what and why)
-- ❌ NEVER `git push origin main` (breaks collaboration)
-- ❌ NEVER force push
-- ❌ NEVER skip regression tests
+- ✅ Update main before branching; use a feature branch (never commit to main); push to fork (never origin); create the PR (via `gh` or manual instructions); quality commit message.
+- ❌ NEVER `git push origin main`; NEVER force push; NEVER skip regression tests.
 
-**Why**: This is a real project with other developers. Respect the workflow. Your PR will be reviewed by other agents (code-reviewer) and CI before merge.
+**Why**: Real project with other developers — respect the workflow. Your PR is reviewed by code-reviewer and CI before merge.
 
 ---
 
 ## Delivery Targets
 
-### Target: Local
-
-**Both modes**: Stop after commit, don't push anywhere.
-
-```bash
-git commit -m "..."
-# STOP - no push
-echo "✅ Collection ready at: <collection_location>"
-```
-
-### Target: Git
-
-**Full Build**: Push to main
-```bash
-git push -u origin main
-```
-
-**Enhancement**: Push to fork + create PR
-```bash
-git push fork feature-branch
-gh pr create ...
-```
+- **Local (both modes)**: stop after commit, don't push. Report `Collection ready at: <collection_location>`.
+- **Git — Full Build**: `git push -u origin main`.
+- **Git — Enhancement**: push branch to fork + `gh pr create` (see Workflow 2).
 
 ---
 
 ## Success Criteria
 
-**Full Build**:
-- ✅ Four-pillar audit passes
-- ✅ Committed to local workspace
-- ✅ Pushed to git (if target == "git")
+**Full Build**: four-pillar audit passes; committed to local workspace; pushed to git (if `target == "git"`).
 
-**Enhancement**:
-- ✅ Four-pillar audit passes
-- ✅ Main updated before branching
-- ✅ Feature branch created
-- ✅ Quality commit message
-- ✅ Pushed to fork
-- ✅ PR created (or manual instructions provided)
+**Enhancement**: four-pillar audit passes; main updated before branching; feature branch created; quality commit message; pushed to fork; PR created (or manual instructions provided).
 
 ---
 
 ## Error Handling
 
-### Fork Remote Not Found (Enhancement Mode)
-
-```bash
-if [ "$WORKFLOW_MODE" == "enhancement" ] && [ -z "$FORK_REMOTE" ]; then
-  echo "ERROR: Enhancement mode requires a fork remote."
-  echo ""
-  echo "User should run:"
-  echo "  git remote add fork <their-fork-url>"
-  echo ""
-  echo "Then re-run the swarm."
-  exit 1
-fi
-```
-
-### Merge Conflicts (Enhancement Mode)
-
-```bash
-git pull origin main
-if [ $? -ne 0 ]; then
-  echo "ERROR: Merge conflicts detected."
-  echo "Main has changed since you started."
-  echo ""
-  echo "Resolve conflicts manually or re-run swarm on updated main."
-  exit 1
-fi
-```
+- **Fork remote not found (enhancement)**: abort with an error telling the user to run `git remote add fork <their-fork-url>` and re-run the swarm.
+- **Merge conflicts (enhancement)**: if `git pull origin main` fails, abort with an error — main changed since start; resolve manually or re-run on updated main.
 
 ---
 
@@ -468,220 +159,92 @@ fi
 
 ## Learned Patterns (from production runs)
 
-This section is automatically maintained by insights-sync-specialist.
-Patterns are captured from real production runs and applied here for future reference.
+This section is automatically maintained by insights-sync-specialist. Patterns are captured from real production runs and applied here for future reference.
 
 ### Operational: Azure-Pipelines-Logs
-ansible org Azure DevOps logs are public; extract buildId from check URL, fetch via REST API without auth for targeted error analysis
-
-*Source: Team insight from Hen Yaish*
+ansible org Azure DevOps logs are public; extract buildId from check URL, fetch via REST API without auth for targeted error analysis. *Source: Team insight from Hen Yaish*
 
 ### Operational: Fork-PR-Workflow
-For fork-based PRs: keep feature branch updated with upstream main, push fixes as separate commits for CI re-runs, squash only after all green
-
-*Source: Team insight from Hen Yaish*
+For fork-based PRs: keep feature branch updated with upstream main, push fixes as separate commits for CI re-runs, squash only after all green. *Source: Team insight from Hen Yaish*
 
 ### Operational: Code-Quality-Pre-PR
-Check orphaned files, undefined functions, unused imports, author consistency, test quality before creating PR
-
-*Source: Team insight from Hen Yaish*
+Check orphaned files, undefined functions, unused imports, author consistency, test quality before creating PR. *Source: Team insight from Hen Yaish*
 
 ### Operational: PR-Lifecycle-Management
-Monitor PR checks via GitHub API, extract buildId from Azure Pipelines check URLs, fetch logs without auth (public org), create focused fixes
-
-*Source: Team insight from Hen Yaish*
+Monitor PR checks via GitHub API, extract buildId from Azure Pipelines check URLs, fetch logs without auth (public org), create focused fixes. *Source: Team insight from Hen Yaish*
 
 ### Operational: Version-Bump-Strategy
-NEVER bump versions in galaxy.yml — maintainer controls all versioning. Do not modify galaxy.yml for any reason.
-
-*Source: Team insight from Hen Yaish (updated per PR review)*
+NEVER bump versions in galaxy.yml — maintainer controls all versioning. Do not modify galaxy.yml for any reason. *Source: Team insight from Hen Yaish (updated per PR review)*
 
 ### RULE: Clean Branches — Each PR Gets a Fresh Branch from Main
 
-**NEVER stack branches or accumulate files from other PRs.**
+**NEVER stack branches or accumulate files from other PRs.** Each PR branch MUST be created fresh from `main` and contain ONLY the files for that PR's module(s). With a one-per-module strategy, each branch starts from `origin/main` independently (`git checkout main && git pull origin main` then `git checkout -b <branch>`, staging only that module's `plugins/modules/*` and `tests/integration/targets/*` files).
 
-Each PR branch MUST be created fresh from `main` and contain ONLY the files for that specific PR's module(s). If you have multiple PRs (one-per-module strategy), each branch starts from `origin/main` independently.
-
-```bash
-# ✅ CORRECT: Fresh branch per PR
-git checkout main && git pull origin main
-git checkout -b add-module-cloud
-# Only add cloud module files
-git add plugins/modules/example_resource* tests/integration/targets/example_resource/
-git commit -m "feat: add example_resource module"
-
-git checkout main && git pull origin main
-git checkout -b add-module-service
-# Only add service module files
-git add plugins/modules/example_service* tests/integration/targets/example_service/
-git commit -m "feat: add example_service module"
-```
-
-```bash
-# ❌ WRONG: Stacked branches that accumulate all previous commits
-git checkout add-module-cloud
-git checkout -b add-module-vm  # WRONG — carries cloud files into vm branch
-```
-
-Use `git cherry-pick` if you need a specific shared commit (like a utils update) in multiple branches, but never branch off another feature branch.
+Do NOT branch off another feature branch (that carries the prior branch's files). Use `git cherry-pick` if you need a specific shared commit (like a utils update) in multiple branches.
 
 *Source: PR review — "this is a mess, each PR should not contain other PR's files"*
 
 ### RULE: PR Must Target Upstream Repository
 
-**PRs must be opened against the upstream repo, NOT the fork.**
-
-When working with fork-based workflow, use `--repo` and `--head` flags:
-
-```bash
-# ✅ CORRECT: PR from fork to upstream
-gh pr create \
-  --repo "$UPSTREAM_REPO" \
-  --head "$FORK_USER:add-module-resource" \
-  --base main \
-  --title "feat: add example_resource module" \
-  --body "..."
-
-# ❌ WRONG: PR opened on fork repo
-gh pr create \
-  --title "feat: add example_resource module"
-  # This opens PR on your fork — wrong target!
-```
-
-**Always verify**: `gh pr view --json url` should show the upstream org URL, not your fork.
+**PRs must be opened against the upstream repo, NOT the fork.** In fork-based workflow use `gh pr create --repo "$UPSTREAM_REPO" --head "$FORK_USER:<branch>" --base main`. Omitting these opens the PR on your fork — wrong target. Verify with `gh pr view --json url` (should show the upstream org URL, not your fork).
 
 *Source: PR review — "the PR should be open from working branch to origin main"*
 
 ### RULE: PR Description Must Follow Repo Template
 
-**Use the repository's PR template format. No deviations.**
+**Use the repository's PR template format. No deviations.** Canonical body (fill every placeholder):
 
-Required sections:
-1. **SUMMARY** — What the PR does
-2. **ISSUE TYPE** — Feature Pull Request / Bugfix Pull Request
-3. **COMPONENT NAME** — namespace.collection.module_name
-4. **ADDITIONAL INFORMATION** — Epic reference, design details
-
-```bash
-gh pr create --body "$(cat <<'EOF'
+```
 ##### SUMMARY
-Adds <module_name> module for managing <resource_type> resources.
+Adds <module_name> module for <high-level description>.
 
 **Design & Implementation:**
-- **Purpose:** Manages <resource_type> lifecycle
-- **Functionality:** Create, update, delete resources
-- **Architecture:** <platform-specific implementation details>
-- **Error Handling:** Try-Catch with descriptive FailJson messages
-- **Validation:** Idempotency, check mode, error handling tests
+- **Purpose:** <problem solved / capability added>
+- **Functionality:** <operations/states/parameters supported>
+- **Architecture:** <implementation; e.g. PowerShell/.ps1 + Python/.py split, API pattern>
+- **Error Handling:** <failures, edge cases, invalid inputs>
+- **Validation:** <tests, idempotency, check mode>
 
 ##### ISSUE TYPE
-- Feature Pull Request
+- Feature Pull Request        # or "New Module Pull Request" / "Bugfix Pull Request"
 
 ##### COMPONENT NAME
 - <namespace>.<collection>.<module_name>
 
 ##### ADDITIONAL INFORMATION
-<Epic/ticket reference>
-EOF
-)"
+<EPIC-KEY / epic URL>
 ```
 
-**FORBIDDEN sections:**
-- ❌ `## Test plan` — Remove entirely, not part of the template
-- ❌ Any section not in the repo's `.github/PULL_REQUEST_TEMPLATE.md`
+**FORBIDDEN**: any `## Test plan` section (remove entirely); any section not in the repo's `.github/PULL_REQUEST_TEMPLATE.md`.
 
 *Source: PR review — "update each PR description according to the PR template, remove test plan from the description"*
 
 ### RULE: Never Include Claude Code Attribution in PRs
 
-**NEVER add the "Generated with Claude Code" line to PR descriptions or commit messages.**
-
-```bash
-# ❌ FORBIDDEN — remove these lines from ALL PR bodies and commits:
-# 🤖 Generated with [Claude Code](https://claude.com/claude-code)
-# Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-```
-
-This applies to:
-- PR descriptions/bodies
-- Commit messages
-- Any user-facing output
+**NEVER add "Generated with Claude Code" or `Co-Authored-By: Claude ...` lines** to PR descriptions, commit messages, or any user-facing output. It is unprofessional.
 
 *Source: PR review — "remove also the 🤖 Generated with Claude Code - its unprofessional"*
 
 ### RULE: Preserve Shared Utility Changes Across PR Closures
 
-When closing and recreating PRs (e.g., to fix dirty branches), shared changes like `module_utils/` updates can be LOST if they were only in one of the old branches.
-
-**Before closing any PR:**
-1. List ALL changed files: `git diff main...branch --name-only`
-2. Identify shared/utility files (module_utils/, common helpers)
-3. Note which PR branch contains the shared change
-4. After recreating clean branches, verify the shared change exists in the appropriate new branch
-5. If lost, cherry-pick or re-apply the utility change
-
-```bash
-# Check if utils changes survived PR recreation
-git diff main...new-branch -- plugins/module_utils/
-# If empty but should have changes → cherry-pick from old branch
-git cherry-pick <commit-with-utils-update>
-```
+When closing and recreating PRs (e.g. to fix dirty branches), shared changes like `module_utils/` updates can be LOST if they lived in only one old branch. Before closing any PR: list all changed files (`git diff main...branch --name-only`), identify shared/utility files, note which branch holds each shared change, and after recreating clean branches verify the change survived (`git diff main...new-branch -- plugins/module_utils/`). If lost, cherry-pick the utility commit into the appropriate new branch.
 
 *Source: PR review — shared mb_to_gb utils update was lost when old PRs were closed*
 
 ### RULE: Never Create Orphan Branches
 
-**Branches MUST share history with upstream main.**
-
-```bash
-# ❌ WRONG: Orphan branch (no shared history)
-git checkout --orphan new-feature
-# or
-git switch --orphan new-feature
-
-# ✅ CORRECT: Branch from main
-git checkout main && git pull origin main
-git checkout -b new-feature
-```
-
-Orphan branches cannot be cleanly merged upstream and create confusing PR diffs.
+**Branches MUST share history with upstream main.** Never use `git checkout --orphan` / `git switch --orphan`; always branch from main (`git checkout main && git pull origin main` then `git checkout -b <branch>`). Orphan branches cannot be cleanly merged upstream and create confusing PR diffs.
 
 *Source: Swarm session learning*
 
 ### RULE: Cherry-Pick for Independent PRs
 
-When creating multiple independent PRs from the same work, use cherry-pick to keep branches independent:
-
-```bash
-# Create independent branches with cherry-pick
-git checkout main && git pull origin main
-git checkout -b pr-module-a
-git cherry-pick <commit-for-module-a>
-git cherry-pick <commit-for-shared-utils>  # if needed
-
-git checkout main
-git checkout -b pr-module-b
-git cherry-pick <commit-for-module-b>
-git cherry-pick <commit-for-shared-utils>  # same shared commit if needed
-```
-
-**Never use stacked branches** that accumulate all previous commits — each PR branch must be independently mergeable.
+When creating multiple independent PRs from the same work, keep branches independent via cherry-pick: for each PR, start fresh from main and cherry-pick that module's commit (plus any shared-utils commit if needed) — reusing the same shared commit across branches is fine. **Never use stacked branches** that accumulate all previous commits; each PR branch must be independently mergeable.
 
 *Source: Swarm session learning*
 
 ### RULE: Chain-Rebase After Amending
 
-If you amend a commit that has downstream branches depending on it, rebase them **sequentially**, not independently:
-
-```bash
-# After amending commit on branch-a:
-git checkout branch-b
-git rebase branch-a  # rebase onto amended branch-a
-
-git checkout branch-c
-git rebase branch-b  # rebase onto rebased branch-b (NOT independently onto branch-a)
-```
-
-Independent rebases cause divergent histories and merge conflicts.
+If you amend a commit that has downstream branches depending on it, rebase them **sequentially**, not independently: after amending `branch-a`, rebase `branch-b` onto `branch-a`, then rebase `branch-c` onto the rebased `branch-b` (NOT independently onto `branch-a`). Independent rebases cause divergent histories and merge conflicts.
 
 *Source: Swarm session learning*
