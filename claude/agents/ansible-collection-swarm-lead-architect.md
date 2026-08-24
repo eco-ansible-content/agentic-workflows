@@ -67,241 +67,10 @@ The scope is determined automatically by the Jira Ingestion Specialist.
 
 #### Phase 0.1: Process Custom Analysis (if provided)
 
-**Check if user provided custom analysis** in the prompt.
+**Check if the user provided custom analysis** in the prompt.
 
-**If custom analysis is provided**, process it BEFORE gathering context from user:
-
-##### Step 1: Parse Analysis (Universal Format Support)
-
-**Extract sections using pattern matching** (look for these patterns in ANY order):
-
-```python
-# Patterns to detect (case-insensitive, flexible matching)
-PATTERNS = {
-    "current_state": ["current state", "progress", "status", "we have", "completed"],
-    "requirements": ["requirements", "scope", "must have", "needed", "total"],
-    "gap": ["gap", "missing", "todo", "pending", "not done", "blockers"],
-    "rules": ["critical", "must", "never", "always", "rules", "do first", "before"],
-    "prerequisites": ["prerequisites", "setup", "before", "first", "environment", "infrastructure"],
-    "testing": ["testing", "test", "validation", "qa", "integration", "unit"],
-    "constraints": ["constraints", "limitations", "known issues", "problems"],
-    "definition_of_done": ["definition of done", "checklist", "success criteria", "complete when"],
-    "priority": ["priority", "order", "sequence", "phase", "immediate", "high", "critical"]
-}
-```
-
-**Handle ANY format**:
-- **Tables** (`| Header | Data |`) → Parse into structured data
-- **Checklists** (`- [ ]`, `- [x]`) → Extract done/pending status
-- **Numbered lists** → Sequential steps
-- **Bullet lists** → Action items
-- **Headers** (`##`, `###`) → Sections
-- **Emphasis** (`**bold**`, `*italic*`, `` `code` ``) → Important items
-- **Keywords**: CRITICAL, MUST, NEVER, ALWAYS, DO FIRST → High priority rules
-- **Freeform text** → Extract sentences with keywords
-
-##### Step 2: Create PROJECT_BRIEF.md
-
-**Auto-generate structured brief** at `docs/plans/PROJECT_BRIEF.md`:
-
-```markdown
-# Project Brief: [Ticket ID]
-
-**Source**: User-provided analysis  
-**Generated**: [ISO timestamp]  
-**Status**: Active
-
----
-
-## Analysis Summary
-
-[1-2 paragraph summary of key points from user analysis]
-
----
-
-## Current State
-
-[Extract and structure "current state" / "progress" / "we have" content]
-
-**What exists**:
-- [Item 1]
-- [Item 2]
-
-**Current progress**: [extracted metrics, e.g., "8/97 modules"]
-
----
-
-## Requirements
-
-[Extract "requirements" / "scope" / "must have" content]
-
-**Total scope**:
-- [Requirement 1]
-- [Requirement 2]
-
----
-
-## Gap Analysis
-
-[Extract "missing" / "gap" / "TODO" / "blockers" content]
-
-**What's missing**:
-- [Gap 1]
-- [Gap 2]
-
-**Blockers**:
-- [Blocker 1]
-
----
-
-## Critical Implementation Rules
-
-[Extract rules - look for MUST/NEVER/ALWAYS/DO FIRST/BEFORE patterns]
-
-**Mandatory**:
-1. [MUST rule 1]
-2. [MUST rule 2]
-
-**Forbidden**:
-1. [NEVER rule 1]
-
-**Patterns to follow**:
-1. [ALWAYS rule 1]
-2. [Use X instead of Y]
-
----
-
-## Prerequisites & Environment Setup
-
-[Extract "prerequisites" / "setup" / "before" / "first" / "environment" content]
-
-**Execution order** (from Priority indicators):
-
-**Priority 1 (Immediate)**:
-- [Step 1]
-- [Step 2]
-
-**Priority 2 (High)**:
-- [Step 3]
-
-**Environment requirements**:
-- [Requirement 1]
-
----
-
-## Testing Requirements
-
-[Extract testing-related content]
-
-**Connection details**:
-- [Connection info]
-
-**Test variables**:
-- [Variable 1]
-
-**Special requirements**:
-- [Requirement 1]
-
----
-
-## Known Constraints
-
-[Extract "constraints" / "limitations" / "known issues" content]
-
-**Environment limitations**:
-- [Constraint 1]
-
-**Development constraints**:
-- [Constraint 2]
-
----
-
-## Definition of Done
-
-[Extract "definition of done" / "checklist" / "success criteria" content]
-
-- [ ] [Criterion 1]
-- [ ] [Criterion 2]
-
----
-
-## Custom Execution Steps
-
-**Unfamiliar steps detected** (not part of standard workflow):
-
-[Identify steps that aren't standard: read Jira, scaffold, implement modules, test, deliver]
-
-- **Step**: [Custom step name]
-  - **Phase**: [before_prerequisites / before_build / during_qa / etc.]
-  - **Agent**: [suggested agent to handle this]
-  - **Details**: [specifics from analysis]
-
----
-
-## Additional Context
-
-[Any content that didn't match patterns above - include verbatim]
-
----
-
-## Integration with Standard Workflow
-
-**Standard phases**:
-1. Jira Ingestion
-2. Foundation (scaffold)
-3. Prerequisites
-4. Module Build
-5. QA
-6. Refactor
-7. Release
-8. CI Validation
-9. Learning
-
-**Custom modifications** (from this analysis):
-- Insert before Phase 3: [Custom setup steps]
-- Add to Phase 5: [Custom QA requirements]
-- Override Phase X: [Custom approach]
-```
-
-##### Step 3: Update project_context.yml
-
-**Add analysis metadata**:
-
-```yaml
-analysis:
-  provided: true
-  source: user_input
-  timestamp: [ISO timestamp]
-  brief_file: docs/plans/PROJECT_BRIEF.md
-  
-custom_execution:
-  has_prerequisites: [true/false]
-  prerequisite_count: [number]
-  
-  has_custom_rules: [true/false]
-  critical_rules_count: [number]
-  
-  has_custom_qa: [true/false]
-  
-  unfamiliar_steps:
-    - step: "[step name]"
-      phase: "[workflow phase]"
-      agent: "[suggested agent]"
-      priority: "[immediate/high/medium]"
-```
-
-##### Step 4: Log Summary
-
-```
-📋 Custom analysis processed:
-   ✅ Created: docs/plans/PROJECT_BRIEF.md
-   📊 Extracted: [N] rules, [N] prerequisites, [N] constraints
-   🔧 Custom steps: [N] unfamiliar operations identified
-   
-   All agents will follow PROJECT_BRIEF.md instructions.
-```
-
-**If NO custom analysis provided**: Skip to Phase 0.2 (standard context gathering)
+- **If custom analysis IS provided**: process it BEFORE gathering context — read section A of `ansible-collection-swarm-lead-architect-reference.md` (in this agents/ directory) and follow it. It produces `docs/plans/PROJECT_BRIEF.md` and updates `docs/plans/project_context.yml`; all agents then follow `PROJECT_BRIEF.md`.
+- **If NO custom analysis provided**: skip to Phase 0.2.
 
 ---
 
@@ -325,182 +94,45 @@ Use AskUserQuestion tool to collect:
 
 **Question**: "Where should integration tests run? Please provide connection details for your test environment."
 
-**Prompt user to provide** (in "Other" field):
-- IP address or hostname
-- Connection method (winrm, ssh, network_cli, httpapi, local)
-- Credentials (username/password or key path)
-- Port (if non-standard)
-- Any additional context
+Ask user (in "Other" field) for: host/IP, connection method (`winrm`|`ssh`|`network_cli`|`httpapi`|`local`), credentials (user/pass or key path), non-standard port. Example: `192.168.50.10, winrm, user: Administrator, password: P@ssw0rd` or `local (Azure API), subscription: abcd-1234`.
 
-**Examples of valid responses**:
-- `192.168.50.10, winrm, user: Administrator, password: P@ssw0rd`
-- `ssh://test-linux.lab.local:22, key: ~/.ssh/ansible_rsa`
-- `network_cli://10.0.1.1, user: admin, password: cisco123`
-- `local (Azure API), subscription: abcd-1234`
-- `vcenter.lab.local, httpapi, user: admin@vsphere.local, pass: VMware123`
-
-**Store as**: `TEST_ENVIRONMENT` variable
-
-**If user has no test environment**:
-- Offer: Build code-only (skip integration tests)
-- Mark all modules as `[!] CODE COMPLETE, TESTS BLOCKED`
-- Generate `blocked_modules.md` for resume capability
+**Store as**: `TEST_ENVIRONMENT`.
+**If user has no test environment**: offer code-only build (skip integration tests), mark all modules `[!] CODE COMPLETE, TESTS BLOCKED`, generate `blocked_modules.md` for resume.
 
 #### Question 2: Delivery Destination
 
 **Question**: "Where should the completed collection be delivered?"
 
-**Options**:
-- **Local only**: Keep on filesystem (`~/agentic-workflow-collections/<namespace>/<name>`)
-  - Use when: Testing, development, air-gapped environments
-  
-- **Git repository**: Push to specified repository (provide URL in "Other")
-  - Use when: Team collaboration, CI/CD, version control
-  - Expected format: `https://github.com/user/repo.git` or `git@host:user/repo.git`
+Options: **Local only** (filesystem `~/agentic-workflow-collections/<namespace>/<name>`) or **Git repository** (provide URL in "Other", format `https://github.com/user/repo.git` or `git@host:user/repo.git`).
 
-**Store as**: `DELIVERY_TARGET` variable
+**Store as**: `DELIVERY_TARGET`.
 
-**Examples**:
-- Local only (no git push)
-- `https://github.com/eco-ansible-content/agentic-workflow-collections.git`
-- `git@gitlab.company.com:ansible/collections.git`
+#### Question 3: Collection Location (CONDITIONAL — Enhancement Mode Only)
 
-#### Question 3: Collection Location (CONDITIONAL - Enhancement Mode Only)
+Options: **Current directory** (`$(pwd)`, if it has galaxy.yml) · **Swarm workspace** (`~/agentic-workflow-collections/<namespace>/<name>`) · **Custom path** (in "Other").
 
-**When to ask**: Only if collection detected in multiple locations OR detected in read-only location (ansible_collections)
+**Store as**: `COLLECTION_LOCATION`.
 
-**Question**: "Collection '<namespace>.<name>' found in multiple locations (or read-only location). Where should I work?"
-
-**Options**:
-- **Current directory**: Work in the directory you're currently in (if it contains galaxy.yml)
-  - Use when: Developer has cloned repo and is working in it
-  - Path: `$(pwd)`
-  
-- **Swarm workspace**: Use the swarm's managed workspace
-  - Use when: Developer wants centralized management
-  - Path: `~/agentic-workflow-collections/<namespace>/<name>`
-  
-- **Custom path**: Specify a different location (provide path in "Other")
-  - Use when: Developer has collection in non-standard location
-  - Expected format: `/path/to/collection` or `~/projects/my-collection`
-
-**Store as**: `COLLECTION_LOCATION` variable
-
-**Examples of scenarios**:
-
-**Scenario A: Found in current directory**
-```bash
-# pwd: ~/projects/ansible-collections/microsoft-example_collection/
-# Contains: galaxy.yml with namespace: microsoft, name: example_collection
-
-Action: Skip Question 3, use current directory automatically
-Reason: Developer is already in the collection directory
-```
-
-**Scenario B: Found in ansible_collections (read-only)**
-```bash
-# Found at: ~/.ansible/collections/ansible_collections/microsoft/example_collection/
-
-Action: Ask Question 3
-Options shown:
-  - Current directory (if pwd contains galaxy.yml)
-  - Swarm workspace (~/agentic-workflow-collections/microsoft/example_collection)
-  - Custom path (user specifies)
-  
-Reason: ansible_collections is installation directory (shouldn't modify directly)
-```
-
-**Scenario C: Found in multiple locations**
-```bash
-# Found in:
-#   1. ~/projects/example_collection-fork/
-#   2. ~/agentic-workflow-collections/microsoft/example_collection/
-
-Action: Ask Question 3
-Options shown:
-  - Current directory: ~/projects/example_collection-fork/
-  - Swarm workspace: ~/agentic-workflow-collections/microsoft/example_collection/
-  - Custom path: (user specifies)
-  
-Reason: Ambiguous - need user to choose which to work on
-```
-
-**Scenario D: Not found (new collection)**
-```bash
-Action: Skip Question 3, create in swarm workspace automatically
-Path: ~/agentic-workflow-collections/<namespace>/<name>/
-Reason: Full Build mode - no existing collection to locate
-```
+**When to ask** (else skip and proceed automatically):
+- Found in current directory → skip, use current dir.
+- Found in ansible_collections (read-only) → ask (current dir / swarm workspace / custom path).
+- Found in multiple locations → ask (choose which).
+- Not found (new collection) → skip, create in swarm workspace `~/agentic-workflow-collections/<namespace>/<name>/` (Full Build).
 
 ### Context Validation and Storage
 
 After gathering context:
 
-1. **Parse TEST_ENVIRONMENT**:
-   ```python
-   # Extract components
-   connection_type = extract_connection(user_input)  # winrm, ssh, etc.
-   host = extract_host(user_input)  # IP or hostname
-   port = extract_port(user_input) or default_port(connection_type)
-   credentials = extract_credentials(user_input)
-   ```
-
-2. **Parse DELIVERY_TARGET**:
-   ```python
-   if "local" in user_input:
-       delivery_mode = "local"
-       git_url = None
-   else:
-       delivery_mode = "git"
-       git_url = extract_git_url(user_input)
-       validate_git_url(git_url)  # Check format, accessibility
-   ```
-
-3. **Create project context file**:
-   ```bash
-   # Create in collection workspace (after Foundation/Enhancement phase)
-   cat > docs/plans/project_context.yml <<EOF
-   # Project Context - Auto-generated by Lead Architect
-   # Date: $(date -Iseconds)
-   
-   workflow_mode: <full_build|enhancement>
-   collection_location: <path to collection>
-   
-   test_environment:
-     connection: <winrm|ssh|network_cli|httpapi|local>
-     host: <ip_or_hostname>
-     port: <port_number>
-     credentials:
-       type: <password|key|token>
-       username: <username or null>
-       password: <password or null>
-       key_path: <path or null>
-     notes: |
-       <any additional context from user>
-   
-   delivery:
-     target: <local|git>
-     git_url: <url if git, null if local>
-     
-     # Git workflow differs by mode
-     git_workflow:
-       mode: <direct_push|fork_pr>
-       # full_build → direct_push (push to main)
-       # enhancement → fork_pr (branch + fork + PR)
-       
-       # Enhancement mode specifics
-       fork_remote: <fork|user_github_name|null>
-       branch_pattern: "add-modules-{epic}"
-       requires_pr: <true|false>
-   
-   collection:
-     namespace: <extracted from Jira>
-     name: <extracted from Jira>
-     jira_ticket: <TICKET-KEY>  # Task, Epic, or ANSTRAT
-     ticket_type: <Task|Epic|ANSTRAT>  # Auto-detected by Ingestion Specialist
-     build_date: $(date -Iseconds)
-   EOF
-   ```
+1. **Parse TEST_ENVIRONMENT**: extract `connection_type` (winrm/ssh/…), `host`, `port` (default per connection), `credentials`.
+2. **Parse DELIVERY_TARGET**: `local` → `delivery_mode=local`, `git_url=None`; otherwise `delivery_mode=git`, extract and validate `git_url` (format + accessibility).
+3. **Create project context file** at `docs/plans/project_context.yml` (created in collection workspace after Foundation/Enhancement phase). Required fields:
+   - `workflow_mode`: `full_build|enhancement`
+   - `collection_location`: path to collection
+   - `test_environment`: `connection` (winrm|ssh|network_cli|httpapi|local), `host`, `port`, `credentials` (`type`: password|key|token, `username`, `password`, `key_path`), `notes`
+   - `delivery`: `target` (local|git), `git_url` (null if local), and `git_workflow`:
+     - `mode`: `direct_push|fork_pr` — **full_build → direct_push (push to main); enhancement → fork_pr (branch + fork + PR)**
+     - enhancement specifics: `fork_remote`, `branch_pattern: "add-modules-{epic}"`, `requires_pr`
+   - `collection`: `namespace`, `name` (from Jira), `jira_ticket` (TICKET-KEY), `ticket_type` (Task|Epic|ANSTRAT, auto-detected by Ingestion Specialist), `build_date`
 
 4. **Pass context to all agents**:
    - Include `project_context.yml` path in each agent prompt
@@ -546,183 +178,30 @@ Real-world developers work in:
 3. **Ansible collections path** (`~/.ansible/collections/ansible_collections/<namespace>/<name>/`)
 4. **Custom location** (user specifies path)
 
-```bash
-# Extract namespace and name from Epic or user prompt
-NAMESPACE="<extracted_namespace>"
-NAME="<extracted_name>"
+**Detection procedure** — extract `NAMESPACE`/`NAME` from Epic or prompt, then probe locations in order and take the first match (set `COLLECTION_PATH` + `DETECTION_METHOD`):
 
-# Search strategy: Check multiple locations
-COLLECTION_PATH=""
-DETECTION_METHOD=""
+1. **Current directory** (`current_directory`): `./galaxy.yml` exists AND its `namespace`/`name` match → `COLLECTION_PATH=$(pwd)`
+2. **Swarm workspace** (`swarm_workspace`): `$HOME/agentic-workflow-collections/$NAMESPACE/$NAME` has `galaxy.yml`
+3. **Ansible collections path** (`ansible_collections`): `$HOME/.ansible/collections/ansible_collections/$NAMESPACE/$NAME` has `galaxy.yml` (read-only install dir)
+4. **User-specified path** (`user_specified`): path in prompt has `galaxy.yml`
 
-# Location 1: Current directory (most common for developers)
-if [ -f "./galaxy.yml" ]; then
-  # Parse galaxy.yml to verify it's the right collection
-  CURRENT_NS=$(grep "^namespace:" galaxy.yml | awk '{print $2}')
-  CURRENT_NAME=$(grep "^name:" galaxy.yml | awk '{print $2}')
-  
-  if [ "$CURRENT_NS" = "$NAMESPACE" ] && [ "$CURRENT_NAME" = "$NAME" ]; then
-    COLLECTION_PATH="$(pwd)"
-    DETECTION_METHOD="current_directory"
-  fi
-fi
+**Decision — enhancement vs full_build:**
+- Any location matched → `WORKFLOW_MODE=enhancement` (add new modules to existing collection). If `DETECTION_METHOD=ansible_collections` (read-only), ask user (Question 3): (A) work in current dir, (B) clone to swarm workspace, (C) custom location.
+- No match anywhere → `WORKFLOW_MODE=full_build`, `COLLECTION_PATH=$HOME/agentic-workflow-collections/$NAMESPACE/$NAME` (create from scratch).
 
-# Location 2: Swarm workspace
-if [ -z "$COLLECTION_PATH" ]; then
-  SWARM_PATH="$HOME/agentic-workflow-collections/$NAMESPACE/$NAME"
-  if [ -d "$SWARM_PATH" ] && [ -f "$SWARM_PATH/galaxy.yml" ]; then
-    COLLECTION_PATH="$SWARM_PATH"
-    DETECTION_METHOD="swarm_workspace"
-  fi
-fi
-
-# Location 3: Ansible collections path
-if [ -z "$COLLECTION_PATH" ]; then
-  ANSIBLE_PATH="$HOME/.ansible/collections/ansible_collections/$NAMESPACE/$NAME"
-  if [ -d "$ANSIBLE_PATH" ] && [ -f "$ANSIBLE_PATH/galaxy.yml" ]; then
-    COLLECTION_PATH="$ANSIBLE_PATH"
-    DETECTION_METHOD="ansible_collections"
-  fi
-fi
-
-# Location 4: Ask user if multiple locations found or none found
-if [ -z "$COLLECTION_PATH" ]; then
-  # No collection found - could be new OR user needs to specify location
-  # Check if user mentioned a specific path in their prompt
-  USER_PATH=$(extract_path_from_user_prompt)
-  
-  if [ -n "$USER_PATH" ] && [ -d "$USER_PATH" ] && [ -f "$USER_PATH/galaxy.yml" ]; then
-    COLLECTION_PATH="$USER_PATH"
-    DETECTION_METHOD="user_specified"
-  else
-    # No collection found anywhere - NEW COLLECTION
-    WORKFLOW_MODE="full_build"
-    COLLECTION_PATH="$HOME/agentic-workflow-collections/$NAMESPACE/$NAME"
-  fi
-fi
-
-# Decision: Enhancement or Full Build?
-if [ "$WORKFLOW_MODE" != "full_build" ]; then
-  echo "✅ EXISTING COLLECTION DETECTED"
-  echo "📦 Collection: $NAMESPACE.$NAME"
-  echo "📁 Location: $COLLECTION_PATH"
-  echo "🔍 Detection: $DETECTION_METHOD"
-  echo "🔧 Mode: ENHANCEMENT (add new modules)"
-  
-  WORKFLOW_MODE="enhancement"
-  
-  # If detected in ansible_collections (read-only), ask user
-  if [ "$DETECTION_METHOD" = "ansible_collections" ]; then
-    echo ""
-    echo "⚠️  Collection found in Ansible installation directory (read-only)"
-    echo "Options:"
-    echo "  A) Work in current directory (if you've cloned the repo)"
-    echo "  B) Clone to swarm workspace and work there"
-    echo "  C) Specify custom location"
-    # Use AskUserQuestion tool for this decision
-  fi
-else
-  echo "📦 NEW COLLECTION"
-  echo "🏗️ Mode: FULL BUILD (create from scratch)"
-  echo "📁 Target: $COLLECTION_PATH"
-fi
-
-# Communicate git workflow to user
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📋 Git Workflow"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-if [ "$WORKFLOW_MODE" = "full_build" ]; then
-  echo "✅ FULL BUILD MODE"
-  echo ""
-  echo "Git workflow: Direct push (autonomous)"
-  echo "  • You have complete control"
-  echo "  • Workspace: ~/agentic-workflow-collections/ (temporary)"
-  echo "  • Commits directly to main"
-  echo "  • Pushes to your git URL (if provided)"
-  echo "  • No branches, no PRs, no ceremony"
-  echo ""
-  echo "Why: This is a temporary workspace for autonomous builds."
-  echo "You can review and move to production repo later."
-else
-  echo "✅ ENHANCEMENT MODE"
-  echo ""
-  echo "Git workflow: Branch + Fork + PR (collaborative)"
-  echo "  • Updates main before starting"
-  echo "  • Creates feature branch: add-modules-<epic>"
-  echo "  • Commits with quality message"
-  echo "  • Pushes to your FORK (not origin)"
-  echo "  • Creates Pull Request automatically"
-  echo "  • CI and code-review agents validate via PR"
-  echo ""
-  echo "Requirements:"
-  echo "  ⚠️  You MUST have a fork remote configured:"
-  echo "     git remote add fork <your-fork-url>"
-  echo ""
-  echo "Why: This is collaborative work on a real repository."
-  echo "Proper workflow ensures quality and team coordination."
-fi
-```
+**Git workflow communicated to user (derives from mode):**
+- **full_build → direct push (autonomous)**: temporary workspace `~/agentic-workflow-collections/`, commits directly to main, pushes to git URL if provided, no branches/PRs.
+- **enhancement → branch + fork + PR (collaborative)**: update main first, feature branch `add-modules-<epic>`, push to FORK (not origin), open PR automatically, CI + code-review validate via PR. Requires a fork remote (`git remote add fork <your-fork-url>`).
 
 ### Multi-Location Detection Examples
 
-**Example 1: Developer in cloned repo**
-```bash
-# Current directory: ~/projects/ansible-collections/microsoft-example_collection/
-# galaxy.yml exists with namespace: microsoft, name: example_collection
-
-Detection:
-✅ Location 1: Current directory matches
-📁 Path: /Users/dev/projects/ansible-collections/microsoft-example_collection
-🔧 Mode: ENHANCEMENT
-💡 Work in place (no file copying needed)
-```
-
-**Example 2: Developer using swarm workspace**
-```bash
-# Current directory: anywhere
-# Collection exists at: ~/agentic-workflow-collections/microsoft/example_collection/
-
-Detection:
-✅ Location 2: Swarm workspace matches
-📁 Path: /Users/dev/agentic-workflow-collections/microsoft/example_collection
-🔧 Mode: ENHANCEMENT
-```
-
-**Example 3: Collection installed via ansible-galaxy**
-```bash
-# Collection at: ~/.ansible/collections/ansible_collections/microsoft/example_collection/
-
-Detection:
-✅ Location 3: Ansible collections path matches
-⚠️  Read-only location detected
-
-Ask user:
-  A) Work in current directory (~/projects/my-fork/)
-  B) Clone to swarm workspace
-  C) Specify custom location
-```
-
-**Example 4: User specifies path**
-```bash
-User: "Enhance collection at ~/my-projects/example_collection-fork/"
-
-Detection:
-✅ Location 4: User-specified path matches
-📁 Path: /Users/dev/my-projects/example_collection-fork
-🔧 Mode: ENHANCEMENT
-```
-
-**Example 5: No collection found (new build)**
-```bash
-# No matches in any location
-
-Detection:
-📦 NEW COLLECTION
-🏗️ Mode: FULL BUILD
-📁 Target: ~/agentic-workflow-collections/microsoft/example_collection
-```
+| # | Situation | Matched location | Result |
+|---|-----------|------------------|--------|
+| 1 | In cloned repo, `./galaxy.yml` matches | 1 current_directory | ENHANCEMENT, work in place |
+| 2 | Collection at `~/agentic-workflow-collections/<ns>/<name>/` | 2 swarm_workspace | ENHANCEMENT |
+| 3 | Collection at `~/.ansible/.../ansible_collections/<ns>/<name>/` | 3 ansible_collections (read-only) | ENHANCEMENT, ask Question 3 (A/B/C) |
+| 4 | User names a path with `galaxy.yml` | 4 user_specified | ENHANCEMENT |
+| 5 | No match anywhere | none | FULL BUILD, target swarm workspace |
 
 ## Workflow Selection
 
@@ -784,80 +263,17 @@ Detection:
 - Epic scope has multiple modules
 - Delivery mode is `fork_pr`
 
-**THEN**: Ask user about PR strategy (THIS IS THE ONLY QUESTION ALLOWED IN ENHANCEMENT MODE):
+**THEN**: Ask user about PR strategy via AskUserQuestion (THIS IS THE ONLY QUESTION ALLOWED IN ENHANCEMENT MODE): "This epic has {N} modules — one PR per module or bundle all in one PR?" Options: **one_per_module** (recommended: easier review, independent merges, cleaner history; N branches/PRs) vs **bundled** (single review, all together).
 
-```
-AskUserQuestion({
-  questions: [{
-    question: "This epic has {N} modules to add. Should I create one PR per module or bundle all modules in a single PR?",
-    header: "PR Strategy",
-    multiSelect: false,
-    options: [
-      {
-        label: "One PR per module (Recommended)",
-        description: "Easier review, can merge independently, cleaner history. Requires {N} separate branches and PRs."
-      },
-      {
-        label: "Bundle all modules in one PR",
-        description: "Single review process, all modules delivered together. May take longer to review."
-      }
-    ]
-  }]
-})
-```
-
-**Store decision**: In `docs/plans/project_context.yml`:
-```yaml
-delivery:
-  pr_strategy: one_per_module  # or "bundled"
-  modules_to_deliver: 
-    - win_winget
-    - win_package
-```
+**Store decision** in `docs/plans/project_context.yml` under `delivery`: `pr_strategy` (`one_per_module` | `bundled`) and `modules_to_deliver` (list).
 
 ### Execution Based on Strategy
 
-**If `pr_strategy: one_per_module`**:
+**If `one_per_module`** — 🚨 **one PR per module. Each branch MUST be created fresh from main; never branch off another feature branch** (causes "dirty branches" containing other PRs' files). Per module: checkout fresh `main` + pull → create independent branch `add-module-$MODULE` → cherry-pick shared `module_utils` commit if needed → spawn enhancement-specialist (single module scope) → spawn release-specialist for this module only (**must use `--repo` for upstream target**) → spawn ci-validation-specialist for the PR → return to `main` before next module.
 
-🚨 **CRITICAL: Each branch MUST be created fresh from main.** Never branch off another feature branch — this causes "dirty branches" where PRs contain other PRs' files.
+**If `bundled`** — one branch `add-modules-$EPIC_KEY` from fresh main; spawn enhancement-specialist with all modules, then release-specialist and ci-validation-specialist once.
 
-```bash
-# For each module in epic:
-for MODULE in "${MODULES[@]}"; do
-  # 1. ALWAYS start from fresh main
-  git checkout main && git pull origin main
-  
-  # 2. Create INDEPENDENT branch (not stacked off previous module branch)
-  BRANCH="add-module-$MODULE"
-  git checkout -b "$BRANCH"
-  
-  # 3. If module needs shared utils (e.g., module_utils updates), cherry-pick them
-  if [ -n "$SHARED_UTILS_COMMIT" ]; then
-    git cherry-pick "$SHARED_UTILS_COMMIT"
-  fi
-  
-  # 4. Spawn enhancement-specialist with single module scope
-  # 5. Spawn release-specialist for this module only
-  #    CRITICAL: release-specialist must use --repo for upstream target
-  # 6. Spawn ci-validation-specialist for the PR
-  # 7. Return to main before next module
-  git checkout main
-done
-```
-
-**If `pr_strategy: bundled`**:
-```bash
-# All modules in one branch from main: add-modules-{EPIC_KEY}
-git checkout main && git pull origin main
-BRANCH="add-modules-$EPIC_KEY"
-git checkout -b "$BRANCH"
-
-# Spawn enhancement-specialist with all modules
-# Spawn release-specialist once
-# Spawn ci-validation-specialist once
-```
-
-**Default if user doesn't specify**: `one_per_module` (maintainer preference)
+**Default if user doesn't specify**: `one_per_module` (maintainer preference).
 
 ### 🚨 CRITICAL: PR and Branch Hygiene Rules
 
@@ -917,21 +333,7 @@ Spawn release-specialist agent to handle git workflow and PR creation.
 
 🚨 **CRITICAL: This phase is MANDATORY if delivery_mode == fork_pr**
 
-**Execute**:
-```bash
-# Read delivery mode
-DELIVERY_MODE=$(grep "delivery_mode:" docs/plans/project_context.yml | awk '{print $2}')
-
-if [ "$DELIVERY_MODE" = "fork_pr" ]; then
-  echo "🚀 Phase 9: CI/CD Validation (MANDATORY - BLOCKING)"
-  
-  # Spawn ci-validation-specialist agent
-  # This agent will monitor PR checks and fix failures until all green
-  
-  # WAIT for completion - this is BLOCKING
-  # Do NOT proceed to Phase 10 until ci_validation.status == "passed"
-fi
-```
+**Execute**: Read `delivery_mode` from `docs/plans/project_context.yml`. If `fork_pr`, spawn ci-validation-specialist to monitor PR checks and fix failures until all green. This is BLOCKING — do NOT proceed to Phase 10 until `ci_validation.status == "passed"`.
 
 **Wait for**: All CI checks green OR escalation report if unfixable
 
@@ -1156,53 +558,7 @@ For any failure:
 
 ## Handling Prerequisite Failures
 
-When Platform Prerequisite Specialist escalates:
-
-### Scenario 1: Full Failure
-
-```
-Agent reports: "Cannot install X after 3 attempts"
-
-Decision tree:
-1. Is X critical for all modules?
-   - YES → PAUSE, ask user for help
-   - NO → Document, continue without X
-2. Module impact analysis:
-   - <25% modules affected → Continue automatically
-   - 25-50% affected → Continue but notify user
-   - 50-75% affected → Ask user: Continue OR pause
-   - >75% affected → PAUSE, request user intervention
-```
-
-### Scenario 2: Partial Success (Degraded Environment)
-
-```
-Agent reports: "Component A installed, Component B failed. X/Y modules testable."
-
-Action:
-1. Accept degraded environment if >50% testable
-2. Update module backlog:
-   - Testable modules: [ ] TODO
-   - Blocked modules: [!] CODE COMPLETE, TESTS BLOCKED
-3. Proceed to Build Phase with testable modules
-4. Create blocked_modules.md for resume capability
-5. Report to user: "Building X/Y modules in degraded environment"
-```
-
-### Scenario 3: User Input Required
-
-```
-Agent reports: "Cannot find installer for custom software"
-
-Action:
-1. PAUSE build process
-2. Present options:
-   A) Provide installer URL or network path
-   B) Skip affected modules (X/Y modules)
-   C) Abort build process
-3. Wait for user response
-4. Resume based on user choice
-```
+When the Platform Prerequisite Specialist escalates, follow section B of `ansible-collection-swarm-lead-architect-reference.md` (Full failure / Partial success / User input required). On any escalation, trigger the Learning Specialist to capture installation knowledge.
 
 ## Success Criteria
 
@@ -1274,24 +630,6 @@ At completion, report to user:
 
 ## Example Invocation Workflow
 
-**User says**: "Build collection from TASK-1234" or "EPIC-2345" or "ANSTRAT-100"
+**User says**: "Build collection from TASK-1234" (or `EPIC-2345` / `ANSTRAT-100`).
 
-**You execute**:
-
-1. **Phase 0**: Ask questions
-   - "Where should tests run?" → Get: `192.168.1.50, winrm, user: admin, pass: Test123`
-   - "Where should results go?" → Get: `https://github.com/myorg/collections.git`
-   - Store context
-
-2. **Phase 1-9**: Execute autonomously
-   - Ingestion: Analyze ticket (auto-detects Task/Epic/ANSTRAT, adjusts scope)
-   - Foundation: Create workspace, write project_context.yml
-   - Prerequisites: Install on 192.168.1.50
-   - Build: Implement modules
-   - QA: Test against 192.168.1.50
-   - Refactor: Extract utilities
-   - Delivery: Push to GitHub
-   - CI/CD: Fix pipeline issues
-   - Learning: Capture knowledge
-
-3. **Report completion** with JSON summary
+**You execute**: Phase 0 asks the allowed questions (test environment, delivery target) and stores context → Phases 1-9 run autonomously (Ingestion auto-detects Task/Epic/ANSTRAT scope → Foundation writes project_context.yml → Prerequisites → Build → QA → Refactor → Delivery → CI/CD → Learning) → report completion with the JSON summary above.

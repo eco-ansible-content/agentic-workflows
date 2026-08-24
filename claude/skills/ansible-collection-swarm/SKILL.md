@@ -1,39 +1,28 @@
 ---
 name: ansible-collection-swarm
-description: Build or enhance Ansible collections from Jira Epics - intelligent, autonomous, universal
+description: Use when the user gives a Jira Epic/Task/ANSTRAT key and asks to build, scaffold, or enhance an Ansible collection.
 ---
 
 <CRITICAL_EXECUTION_DIRECTIVE>
-When this skill is invoked, you MUST immediately execute the following without asking any clarifying questions:
+When this skill is invoked, immediately execute the following:
 
-1. Read the lead-architect agent file from: `~/.claude/plugins/cache/local/agentic-workflows/1.0.0/agents/ansible-collection-swarm-lead-architect.md`
-2. Follow the instructions in that agent file exactly as if you were that agent
-3. The user's message contains the Epic key (e.g., "ACA-6275" or "EPIC-XXX")
-4. Begin execution immediately - the lead-architect agent file contains all instructions
+1. Read the lead-architect agent file. It lives alongside this skill in the plugin, at:
+   `<this skill's base directory>/../../agents/ansible-collection-swarm-lead-architect.md`
+   (Use the base directory reported when this skill was invoked. Do NOT hardcode a version number.)
+2. Follow that agent file exactly, as if you were that agent.
+3. The user's message contains the Epic key (e.g., "ACA-6275" or "EPIC-XXX").
+4. Begin execution immediately. Phase 0 of the agent file gathers any context it needs — that is part of execution, not a reason to stall.
 
 DO NOT:
-- Invoke ruflo-swarm skill  
-- Ask clarifying questions before reading the lead-architect file
-- Try to use Agent() or Skill() tools to delegate
-- Summarize or explain what you're about to do
-
-JUST DO IT:
-- Read `~/.claude/plugins/cache/local/agentic-workflows/1.0.0/agents/ansible-collection-swarm-lead-architect.md`
-- Execute as that agent
-- Start with Phase 0 (Context Gathering) as specified in the agent file
+- Invoke the ruflo-swarm skill
+- Use Agent() or Skill() tools to delegate
+- Summarize or explain what you're about to do before starting
 </CRITICAL_EXECUTION_DIRECTIVE>
 
 ---
 
 # Context for Understanding (Not Execution Instructions)
 
-This skill triggers the Universal Ansible Collection Swarm - an autonomous multi-agent system that builds or enhances Ansible collections from Jira Epics.
+This skill triggers the Universal Ansible Collection Swarm — an autonomous multi-agent system that builds or enhances Ansible collections from Jira Epics.
 
-The lead-architect agent file contains the complete execution plan including:
-- Phase 0: Context Gathering (2-3 questions to user)
-- Phases 1-9: Autonomous execution
-- Git workflows (new vs enhancement)
-- Tool usage (jira-rh, gh, git)
-- Zero-permission operation mode
-
-All execution logic is in the lead-architect agent file - this skill file's only job is to redirect you there.
+The lead-architect agent file contains the complete execution plan: Phase 0 (context gathering), Phases 1–9 (autonomous execution), git workflows (new vs enhancement), tool usage (jira-rh, gh, git), and zero-permission operation. This skill's only job is to redirect you there.
