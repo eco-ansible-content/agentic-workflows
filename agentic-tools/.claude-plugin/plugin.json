@@ -1,6 +1,6 @@
 {
   "name": "agentic-tools",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Standalone analysis and audit tools for Ansible collections",
   "author": {
     "name": "Eco Ansible Content"
